@@ -148,5 +148,15 @@ mod tests {
         assert_text2digits!("zéro", "0");
         assert_invalid!("zéro huit");
         assert_invalid!("zéro zéro cent vingt cinq");
+        assert_invalid!("cinq zéro");
+        assert_invalid!("cinquante zéro trois");
+        assert_invalid!("cinquante trois zéro");
+    }
+
+    #[test]
+    fn test_invalid() {
+        assert_invalid!("mille mille deux cent");
+        assert_invalid!("soixante quinze cent");
+        assert_invalid!("quarante douze");
     }
 }

@@ -22,7 +22,10 @@ impl DigitBuilder {
     }
 
     pub fn put(&mut self, digits: &[u8]) -> Result<(), Error> {
-        if self.buffer == b"0" || digits.len() > 1 && all_zeros(digits) {
+        if self.buffer.is_empty() && digits == b"0" {
+            return Ok(self.buffer.push(b'0'));
+        }
+        if self.buffer == b"0" || all_zeros(digits) {
             return Err(Error::Overlap);
         }
         let positions = digits.len();
