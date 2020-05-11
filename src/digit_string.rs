@@ -6,7 +6,7 @@
 use super::error::Error;
 
 #[derive(Debug)]
-pub struct DigitBuilder {
+pub struct DigitString {
     buffer: Vec<u8>,
 }
 
@@ -14,9 +14,9 @@ fn all_zeros(slice: &[u8]) -> bool {
     slice.iter().all(|&c| c == b'0')
 }
 
-impl DigitBuilder {
-    pub fn new() -> DigitBuilder {
-        DigitBuilder {
+impl DigitString {
+    pub fn new() -> DigitString {
+        DigitString {
             buffer: Vec::with_capacity(4),
         }
     }
@@ -65,6 +65,10 @@ impl DigitBuilder {
         self.buffer.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.buffer.len()
+    }
+
     pub fn shift(&mut self, positions: usize) -> Result<(), Error> {
         if positions == 0 {
             return Ok(());
@@ -105,27 +109,27 @@ mod tests {
     use super::*;
     #[test]
     fn test_put_single() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"5")
     }
 
     #[test]
     fn test_put_twice_ok() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"50")?;
         builder.put(b"5")
     }
 
     #[test]
     fn test_put_twice_ok2() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"500")?;
         builder.put(b"55")
     }
 
     #[test]
     fn test_put_twice_overlap() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"5").expect("should pass");
         assert!(builder.put(b"22").is_err());
         assert!(builder.put(b"2").is_err());
@@ -133,14 +137,14 @@ mod tests {
 
     #[test]
     fn test_put_twice_no_slot() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"52").expect("should pass");
         assert!(builder.put(b"2").is_err());
     }
 
     #[test]
     fn test_zero() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         assert!(builder.put(b"0").is_ok());
         assert!(builder.put(b"0").is_err());
         assert!(builder.put(b"5").is_err());
@@ -148,14 +152,14 @@ mod tests {
 
     #[test]
     fn test_zeroes() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         assert!(builder.put(b"00").is_err());
         assert!(builder.put(b"000").is_err());
     }
 
     #[test]
     fn test_peek1() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"5").expect("should pass");
         assert_eq!(builder.peek(1), b"5");
         assert_eq!(builder.peek(2), b"5");
@@ -164,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_peek2() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"56").expect("should pass");
         assert_eq!(builder.peek(1), b"6");
         assert_eq!(builder.peek(2), b"56");
@@ -173,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_fput() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"5")?;
         builder.fput(b"8")?;
         builder.fput(b"73")?;
@@ -182,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_shift_single() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"5")?;
         builder.shift(3)?;
         assert_eq!(builder.peek(4), b"5000");
@@ -191,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_shift_shorter() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"51")?;
         builder.shift(2)?;
         assert_eq!(builder.peek(4), b"5100");
@@ -200,7 +204,7 @@ mod tests {
 
     #[test]
     fn test_shift_subslice_ok() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"50032")?;
         builder.shift(2)?;
         assert_eq!(builder.peek(6), b"53200");
@@ -209,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_shift_subslice_ok2() -> Result<(), Error> {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"2007")?;
         builder.shift(2)?;
         assert_eq!(builder.peek(6), b"2700");
@@ -218,28 +222,28 @@ mod tests {
 
     #[test]
     fn test_shift_subslice_overlap() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"51032").expect("should pass");
         assert!(builder.shift(2).is_err());
     }
 
     #[test]
     fn test_shift_subslice_overlap_short() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.fput(b"532").expect("should pass");
         assert!(builder.shift(2).is_err());
     }
 
     #[test]
     fn test_shift_empty() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.shift(2).unwrap();
         assert_eq!(builder.into_string(), "100")
     }
 
     #[test]
     fn test_shift_full_zeroes() {
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"1000").unwrap();
         builder.shift(2).unwrap();
         assert_eq!(builder.into_string(), "1100")
@@ -248,7 +252,7 @@ mod tests {
     #[test]
     fn complete_example() -> Result<(), Error> {
         // 2792
-        let mut builder = DigitBuilder::new();
+        let mut builder = DigitString::new();
         builder.put(b"2")?;
         builder.shift(3)?;
         builder.put(b"7")?;

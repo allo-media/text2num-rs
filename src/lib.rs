@@ -1,4 +1,4 @@
-pub mod digit_builder;
+pub mod digit_string;
 pub mod error;
 pub mod lang;
 
