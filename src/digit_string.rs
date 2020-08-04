@@ -21,6 +21,9 @@ impl DigitString {
         }
     }
 
+    /// Put the given digit string in the buffer, right aligned.
+    ///
+    /// Return an error if slots are not free or not 0
     pub fn put(&mut self, digits: &[u8]) -> Result<(), Error> {
         if self.buffer.is_empty() && digits == b"0" {
             return Ok(self.buffer.push(b'0'));
@@ -40,6 +43,7 @@ impl DigitString {
         }
     }
 
+    /// Force put (never fail)
     pub fn fput(&mut self, digits: &[u8]) -> Result<(), Error> {
         let positions = digits.len();
         match self.buffer.len() {
@@ -55,6 +59,7 @@ impl DigitString {
         }
     }
 
+    /// Peek the `positions` right most digits.
     pub fn peek(&self, positions: usize) -> &[u8] {
         let length = self.buffer.len();
         let range = length.min(positions);
@@ -69,6 +74,10 @@ impl DigitString {
         self.buffer.len()
     }
 
+    /// Shift the `positions` right most digits, `positions` slots to the left.
+    ///
+    /// Return an error if destination slots are  not free or not 0.
+    /// If there is  nothing on the starting position, first puts 1.
     pub fn shift(&mut self, positions: usize) -> Result<(), Error> {
         if positions == 0 {
             return Ok(());

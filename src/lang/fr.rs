@@ -224,5 +224,6 @@ mod tests {
         assert_invalid!("mille mille deux cent");
         assert_invalid!("soixante quinze cent");
         assert_invalid!("quarante douze");
+        assert_invalid!("soixante et");
     }
 }
