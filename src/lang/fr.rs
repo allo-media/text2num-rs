@@ -16,14 +16,14 @@ struct French {}
 
 impl Lang for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
-        match lemmatize(num_func) {
+        let status = match lemmatize(num_func) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" => b.put(b"1"),
-            "deux" | "deuxième" => b.put(b"2"),
-            "trois" | "troisième" => b.put(b"3"),
-            "quatre" | "quatrième" => b.put(b"4"),
-            "cinq" | "cinquième" => b.put(b"5"),
-            "six" | "sixième" => b.put(b"6"),
+            "un" | "unième" if b.peek(2) != b"10" => b.put(b"1"),
+            "deux" | "deuxième" if b.peek(2) != b"10" => b.put(b"2"),
+            "trois" | "troisième" if b.peek(2) != b"10" => b.put(b"3"),
+            "quatre" | "quatrième" if b.peek(2) != b"10" => b.put(b"4"),
+            "cinq" | "cinquième" if b.peek(2) != b"10" => b.put(b"5"),
+            "six" | "sixième" if b.peek(2) != b"10" => b.put(b"6"),
             "sept" | "septième" => b.put(b"7"),
             "huit" | "huitième" => b.put(b"8"),
             "neuf" | "neuvième" => b.put(b"9"),
@@ -85,10 +85,18 @@ impl Lang for French {
             "mille" | "mil" | "millième" => b.shift(3),
             "million" | "millionième" => b.shift(6),
             "milliard" | "milliardième" => b.shift(9),
-            "et" => if b.len() < 2 { Err(Error::NaN) } else { Err(Error::Incomplete) },
+            "et" if b.len() >= 2 => Err(Error::Incomplete),
 
             _ => Err(Error::NaN),
+        };
+        if status.is_ok() && num_func.ends_with("ème") {
+            b.freeze();
         }
+        status
+    }
+
+    fn is_decimal_sep(&self, word: &str) -> bool {
+        word == "virgule"
     }
 
     fn format(&self, b: DigitString, morph_marker: Option<String>) -> String {
@@ -97,6 +105,10 @@ impl Lang for French {
         } else {
             b.into_string()
         }
+    }
+
+    fn format_decimal(&self, int: DigitString, dec: DigitString) -> String {
+        format!("{},{}", int.into_string(), dec.into_string())
     }
 
     fn get_morph_marker(&self, word: &str) -> Option<String> {
@@ -108,51 +120,34 @@ impl Lang for French {
             None
         }
     }
-
-
 }
-
 
 #[cfg(test)]
 mod tests {
-    use super::{Lang, French};
-    use crate::digit_string::{DigitString};
-    use crate::error::Error;
-
-    fn transform<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
-        let mut builder = DigitString::new();
-        let mut marker: Option<String> = None;
-        let mut incomplete: bool = false;
-        for token in text.split(' ') {
-            incomplete = match lang.apply(token, &mut builder){
-                Err(Error::Incomplete) => true,
-                Ok(()) => false,
-                Err(error) => return Err(error)
-            };
-            marker = lang.get_morph_marker(token);
-        }
-        if incomplete {
-            Err(Error::Incomplete)
-        } else {
-            Ok(lang.format(builder, marker))
-        }
-
-    }
+    use super::French;
+    use crate::word_to_digit::{replace_numbers, text2digits};
 
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
-            let f = French{};
-            let res = transform(&f, $text);
+            let f = French {};
+            let res = text2digits(&f, $text);
             dbg!(&res);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $res)
         };
     }
 
+    macro_rules! assert_replace_numbers {
+        ($text:expr, $res:expr) => {
+            let f = French {};
+            assert_eq!(replace_numbers($text, &f), $res)
+        };
+    }
+
     macro_rules! assert_invalid {
         ($text:expr) => {
-            let f = French{};
-            let res = transform(&f, $text);
+            let f = French {};
+            let res = text2digits(&f, $text);
             assert!(res.is_err());
         };
     }
@@ -198,13 +193,13 @@ mod tests {
     }
 
     #[test]
-    fn test_ordinals(){
+    fn test_ordinals() {
         assert_text2digits!("vingt cinquième", "25ème");
         assert_text2digits!("vingt et unième", "21ème");
     }
 
     #[test]
-    fn test_fractions(){
+    fn test_fractions() {
         assert_text2digits!("vingt cinquièmes", "25èmes");
         assert_text2digits!("vingt et unièmes", "21èmes");
     }
@@ -212,11 +207,12 @@ mod tests {
     #[test]
     fn test_zeroes() {
         assert_text2digits!("zéro", "0");
-        assert_invalid!("zéro huit");
-        assert_invalid!("zéro zéro cent vingt cinq");
+        assert_text2digits!("zéro huit", "08");
+        assert_text2digits!("zéro zéro cent vingt cinq", "00125");
         assert_invalid!("cinq zéro");
         assert_invalid!("cinquante zéro trois");
         assert_invalid!("cinquante trois zéro");
+        assert_invalid!("dix zéro");
     }
 
     #[test]
@@ -225,5 +221,78 @@ mod tests {
         assert_invalid!("soixante quinze cent");
         assert_invalid!("quarante douze");
         assert_invalid!("soixante et");
+        assert_invalid!("dix deux");
+        assert_invalid!("dix unième");
     }
+
+    #[test]
+    fn test_replace_numbers_integers() {
+        assert_replace_numbers!(
+            "Vingt-cinq vaches, douze poulets et cent vingt-cinq kg de pommes de terre.",
+            "25 vaches, 12 poulets et 125 kg de pommes de terre."
+        );
+        assert_replace_numbers!("Mille deux cent soixante-six clous.", "1266 clous.");
+        assert_replace_numbers!("Mille deux cents soixante-six clous.", "1266 clous.");
+        assert_replace_numbers!(
+            "Nonante-cinq = quatre-vingt-quinze = nonante cinq",
+            "95 = 95 = 95"
+        );
+        assert_replace_numbers!("un deux trois quatre vingt quinze.", "1 2 3 95.");
+        assert_replace_numbers!(
+            "un, deux, trois, quatre, vingt, quinze.",
+            "1, 2, 3, 4, 20, 15."
+        );
+        assert_replace_numbers!("Vingt et un, trente et un.", "21, 31.");
+    }
+
+    #[test]
+    fn test_replace_numbers_formal() {
+        assert_replace_numbers!(
+            "zéro neuf soixante zéro six douze vingt et un",
+            "09 60 06 12 21"
+        );
+    }
+
+    #[test]
+    fn test_trente_et_onze() {
+        assert_replace_numbers!("cinquante soixante trente et onze", "50 60 30 et 11");
+    }
+
+    #[test]
+    fn test_replace_numbers_zero() {
+        assert_replace_numbers!("treize mille zéro quatre-vingt-dix", "13000 090");
+        assert_replace_numbers!("treize mille zéro quatre-vingts", "13000 080");
+        assert_replace_numbers!("zéro", "0");
+    }
+
+    #[test]
+    fn test_replace_numbers_ordinals() {
+        assert_replace_numbers!(
+            "Cinquième second troisième vingt et unième centième mille deux cent trentième.",
+            "5ème second 3ème 21ème 100ème 1230ème."
+        );
+    }
+
+    #[test]
+    fn test_replace_numbers_decimals() {
+        assert_replace_numbers!(
+            "Douze virgule quatre-vingt dix-neuf, cent vingt virgule zéro cinq, un virgule deux cent trente six.",
+            "12,99, 120,05, 1,236."
+        );
+    }
+
+    // #[test]
+    // fn test_homonyms(){
+    //     assert_replace_numbers!(
+    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
+    //         les uns et les autres ; une suite de chiffres : un, deux, trois !",
+    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
+    //         les uns et les autres ; une suite de chiffres : 1, 2, 3 !"
+    //     );
+    //     let source = "Je n'en veux qu'un. J'annonce: le un";
+    //     assert_replace_numbers!(
+    //         source,
+    //         source
+    //     );
+    // }
 }

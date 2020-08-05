@@ -2,5 +2,6 @@
 pub enum Error {
     Overlap,
     NaN,
-    Incomplete
+    Incomplete,
+    Frozen,
 }
