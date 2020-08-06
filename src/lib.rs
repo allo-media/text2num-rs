@@ -1,11 +1,7 @@
 pub mod digit_string;
 pub mod error;
 pub mod lang;
+pub mod word_to_digit;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use error::Error;
+pub use word_to_digit::{replace_numbers, text2digits};

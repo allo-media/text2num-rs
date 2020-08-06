@@ -8,6 +8,8 @@ use super::error::Error;
 #[derive(Debug)]
 pub struct DigitString {
     buffer: Vec<u8>,
+    leading_zeroes: usize,
+    frozen: bool,
 }
 
 fn all_zeros(slice: &[u8]) -> bool {
@@ -18,17 +20,34 @@ impl DigitString {
     pub fn new() -> DigitString {
         DigitString {
             buffer: Vec::with_capacity(4),
+            leading_zeroes: 0,
+            frozen: false,
         }
+    }
+
+    /// Freeze the DigitSring to signal the number is complete.
+    ///
+    /// Useful for languages that use some kind of flexion or suffix to mark the end.
+    /// (for example, the suffix -th in English ordinals).
+    pub fn freeze(&mut self) {
+        self.frozen = true;
     }
 
     /// Put the given digit string in the buffer, right aligned.
     ///
-    /// Return an error if slots are not free or not 0
+    /// Return an error if slots are not free or not 0 or digit string is frozen.
+    /// Special case for `0`:
+    /// * only valid in leading position (that is, the buffer still evaluates to 0)
+    /// * any number of leading zeroes are accepted and kept.
     pub fn put(&mut self, digits: &[u8]) -> Result<(), Error> {
-        if self.buffer.is_empty() && digits == b"0" {
-            return Ok(self.buffer.push(b'0'));
+        if self.frozen {
+            return Err(Error::Frozen);
         }
-        if self.buffer == b"0" || all_zeros(digits) {
+        if self.buffer.is_empty() && digits == b"0" {
+            self.leading_zeroes += 1;
+            return Ok(());
+        }
+        if all_zeros(digits) {
             return Err(Error::Overlap);
         }
         let positions = digits.len();
@@ -43,8 +62,11 @@ impl DigitString {
         }
     }
 
-    /// Force put (never fail)
+    /// Force put (never fail, unless dstring is frozen)
     pub fn fput(&mut self, digits: &[u8]) -> Result<(), Error> {
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
         let positions = digits.len();
         match self.buffer.len() {
             0 => Ok(self.buffer.extend_from_slice(digits)),
@@ -71,14 +93,17 @@ impl DigitString {
     }
 
     pub fn len(&self) -> usize {
-        self.buffer.len()
+        self.buffer.len() + self.leading_zeroes
     }
 
     /// Shift the `positions` right most digits, `positions` slots to the left.
     ///
-    /// Return an error if destination slots are  not free or not 0.
+    /// Return an error if destination slots are  not free or not 0 or string is frozen.
     /// If there is  nothing on the starting position, first puts 1.
     pub fn shift(&mut self, positions: usize) -> Result<(), Error> {
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
         if positions == 0 {
             return Ok(());
         }
@@ -89,18 +114,18 @@ impl DigitString {
         if l <= positions {
             return Ok(self.buffer.resize(l + positions, b'0'));
         }
-        let mut leading_zeroes = self.buffer[(l - positions)..]
+        let mut padding_zeroes = self.buffer[(l - positions)..]
             .iter()
             .take_while(|&c| *c == b'0')
             .count();
-        if leading_zeroes == positions {
+        if padding_zeroes == positions {
             self.buffer[l - 1] = b'1';
-            leading_zeroes -= 1;
+            padding_zeroes -= 1;
         }
-        let span = 2 * positions - leading_zeroes;
+        let span = 2 * positions - padding_zeroes;
         if l >= span && all_zeros(&self.buffer[(l - span)..(l - positions)]) {
             let (left, right) = self.buffer.split_at_mut(l - positions);
-            left[(l - span)..].swap_with_slice(&mut right[leading_zeroes..]);
+            left[(l - span)..].swap_with_slice(&mut right[padding_zeroes..]);
             Ok(())
         } else {
             Err(Error::Overlap)
@@ -109,7 +134,9 @@ impl DigitString {
 
     pub fn into_string(self) -> String {
         // we know that the string is valid.
-        String::from_utf8(self.buffer).unwrap()
+        let mut res = "0".repeat(self.leading_zeroes);
+        res.push_str(&String::from_utf8(self.buffer).unwrap());
+        res
     }
 }
 
@@ -155,8 +182,8 @@ mod tests {
     fn test_zero() {
         let mut builder = DigitString::new();
         assert!(builder.put(b"0").is_ok());
-        assert!(builder.put(b"0").is_err());
-        assert!(builder.put(b"5").is_err());
+        assert!(builder.put(b"0").is_ok());
+        assert!(builder.put(b"5").is_ok());
     }
 
     #[test]
@@ -269,6 +296,22 @@ mod tests {
         builder.put(b"90")?;
         builder.put(b"2")?;
         assert_eq!(builder.peek(5), b"2792");
+        Ok(())
+    }
+
+    #[test]
+    fn complete_example_leading_zeroes() -> Result<(), Error> {
+        // 2792
+        let mut builder = DigitString::new();
+        builder.put(b"0")?;
+        builder.put(b"0")?;
+        builder.put(b"2")?;
+        builder.shift(3)?;
+        builder.put(b"7")?;
+        builder.shift(2)?;
+        builder.put(b"90")?;
+        builder.put(b"2")?;
+        assert_eq!(builder.into_string(), "002792");
         Ok(())
     }
 }
