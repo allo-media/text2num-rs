@@ -1,6 +1,6 @@
 [package]
 name = "text2num-rs"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Romuald Texier-Marcadé <r.texiermarcade@allo-media.fr>"]
 edition = "2018"
 
