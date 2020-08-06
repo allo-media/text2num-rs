@@ -3,6 +3,8 @@ pub mod fr;
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
+pub use fr::French;
+
 pub trait Lang {
     // add code here
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error>;
