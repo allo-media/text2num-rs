@@ -12,7 +12,7 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
-struct French {}
+pub struct French {}
 
 impl Lang for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
