@@ -4,7 +4,7 @@ use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::Lang;
 
-struct WordToDigitParser<'a> {
+pub struct WordToDigitParser<'a> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,
