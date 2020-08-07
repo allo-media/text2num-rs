@@ -1,10 +1,11 @@
 [package]
 name = "text2num-rs"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Romuald Texier-Marcadé <r.texiermarcade@allo-media.fr>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "text2num"
 
 [dependencies]
 unicode-segmentation = "1.6"
