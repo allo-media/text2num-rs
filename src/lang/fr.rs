@@ -223,6 +223,7 @@ mod tests {
         assert_invalid!("soixante et");
         assert_invalid!("dix deux");
         assert_invalid!("dix unième");
+        assert_invalid!("vingtième cinq");
     }
 
     #[test]
@@ -280,19 +281,4 @@ mod tests {
             "12,99, 120,05, 1,236."
         );
     }
-
-    // #[test]
-    // fn test_homonyms(){
-    //     assert_replace_numbers!(
-    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
-    //         les uns et les autres ; une suite de chiffres : un, deux, trois !",
-    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
-    //         les uns et les autres ; une suite de chiffres : 1, 2, 3 !"
-    //     );
-    //     let source = "Je n'en veux qu'un. J'annonce: le un";
-    //     assert_replace_numbers!(
-    //         source,
-    //         source
-    //     );
-    // }
 }
