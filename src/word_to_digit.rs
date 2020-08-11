@@ -75,7 +75,7 @@ pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
 }
 
 /// Find spelled numbers in the `text` and replace them by their digit representation.
-/// Isolated zéros are not converted.
+/// Isolated zeros are not converted.
 pub fn replace_numbers(text: &str, lang: &dyn Lang) -> String {
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);
