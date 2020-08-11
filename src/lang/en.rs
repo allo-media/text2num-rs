@@ -18,7 +18,7 @@ impl Lang for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let status = match lemmatize(num_func) {
             "zero" | "o" => b.put(b"0"),
-            "one" | "first" | "oneth" | "oneths" if b.peek(2) != b"10" => b.put(b"1"),
+            "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
             "two" | "second" if b.peek(2) != b"10" => b.put(b"2"),
             "three" | "third" if b.peek(2) != b"10" => b.put(b"3"),
             "four" | "fourth" if b.peek(2) != b"10" => b.put(b"4"),
@@ -185,8 +185,10 @@ mod tests {
     fn test_zeroes() {
         assert_text2digits!("zero", "0");
         assert_text2digits!("zero eight", "08");
+        assert_text2digits!("o eight", "08");
         assert_text2digits!("zero zero hundred twenty five", "00125");
         assert_invalid!("five zero");
+        assert_invalid!("five o");
         assert_invalid!("fifty zero three");
         assert_invalid!("fifty three zero");
     }
@@ -230,7 +232,8 @@ mod tests {
         assert_replace_numbers!("thirteen thousand zero ninety", "13000 090");
         assert_replace_numbers!("zero zero five", "005");
         assert_replace_numbers!("five zero zero", "5 00");
-        assert_replace_numbers!("zero", "0");
+        assert_replace_numbers!("zero", "zero");
+        assert_replace_numbers!("o", "o");
         assert_replace_numbers!(
             "zero nine sixty zero six twelve twenty-one",
             "09 60 06 12 21"
@@ -243,11 +246,11 @@ mod tests {
     fn test_replace_ordinals() {
         assert_replace_numbers!(
             "Fifth third second twenty-first hundredth one thousand two hundred thirtieth.",
-            "5th third second 21st 100th 1230th."
+            "5th 3rd 2nd 21st 100th 1230th."
         );
         assert_replace_numbers!(
             "first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth.",
-            "first, second, third, 4th, 5th, 6th, 7th, 8th, 9th, 10th."
+            "1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th, 9th, 10th."
         );
     }
 

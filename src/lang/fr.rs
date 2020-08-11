@@ -263,7 +263,9 @@ mod tests {
     fn test_replace_numbers_zero() {
         assert_replace_numbers!("treize mille zéro quatre-vingt-dix", "13000 090");
         assert_replace_numbers!("treize mille zéro quatre-vingts", "13000 080");
-        assert_replace_numbers!("zéro", "0");
+        assert_replace_numbers!("zéro", "zéro");
+        assert_replace_numbers!("zéro cinq", "05");
+        assert_replace_numbers!("zéro, cinq", "zéro, 5");
     }
 
     #[test]
