@@ -57,7 +57,7 @@ pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
     let mut builder = DigitString::new();
     let mut marker: Option<String> = None;
     let mut incomplete: bool = false;
-    for token in text.split(' ') {
+    for token in text.split_whitespace().map(|w| w.split('-')).flatten() {
         incomplete = match lang.apply(token, &mut builder) {
             Err(Error::Incomplete) => true,
             Ok(()) => false,
