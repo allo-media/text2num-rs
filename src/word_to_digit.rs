@@ -2,18 +2,18 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
-use crate::lang::Lang;
+use crate::lang::LangInterpretor;
 
-pub struct WordToDigitParser<'a> {
+pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,
     morph_marker: Option<String>,
-    lang: &'a dyn Lang,
+    lang: &'a T,
 }
 
-impl<'a> WordToDigitParser<'a> {
-    pub fn new(lang: &'a dyn Lang) -> Self {
+impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
+    pub fn new(lang: &'a T) -> Self {
         Self {
             int_part: DigitString::new(),
             dec_part: DigitString::new(),
@@ -55,7 +55,7 @@ impl<'a> WordToDigitParser<'a> {
 
 /// Interpret the `text` as a number, and translate it into digits.
 /// Return an error if the text couldn't be undestood as a correct number.
-pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
+pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
     let mut builder = DigitString::new();
     let mut marker: Option<String> = None;
     let mut incomplete: bool = false;
@@ -76,7 +76,7 @@ pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
 
 /// Find spelled numbers in the `text` and replace them by their digit representation.
 /// Isolated zeros are not converted.
-pub fn replace_numbers(text: &str, lang: &dyn Lang) -> String {
+pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T) -> String {
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);
     let mut match_start: usize = 0;

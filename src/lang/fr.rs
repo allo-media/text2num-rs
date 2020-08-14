@@ -1,7 +1,7 @@
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
-use super::Lang;
+use super::LangInterpretor;
 
 fn lemmatize(word: &str) -> &str {
     // brute, blind removal of 's' ending is enough here
@@ -14,7 +14,7 @@ fn lemmatize(word: &str) -> &str {
 
 pub struct French {}
 
-impl Lang for French {
+impl LangInterpretor for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let status = match lemmatize(num_func) {
             "zéro" => b.put(b"0"),
@@ -130,7 +130,7 @@ mod tests {
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
             let f = French {};
-            let res = text2digits(&f, $text);
+            let res = text2digits($text, &f);
             dbg!(&res);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $res)
@@ -147,7 +147,7 @@ mod tests {
     macro_rules! assert_invalid {
         ($text:expr) => {
             let f = French {};
-            let res = text2digits(&f, $text);
+            let res = text2digits($text, &f);
             assert!(res.is_err());
         };
     }
