@@ -223,6 +223,7 @@ mod tests {
         assert_invalid!("soixante et");
         assert_invalid!("dix deux");
         assert_invalid!("dix unième");
+        assert_invalid!("vingtième cinq");
     }
 
     #[test]
@@ -262,7 +263,9 @@ mod tests {
     fn test_replace_numbers_zero() {
         assert_replace_numbers!("treize mille zéro quatre-vingt-dix", "13000 090");
         assert_replace_numbers!("treize mille zéro quatre-vingts", "13000 080");
-        assert_replace_numbers!("zéro", "0");
+        assert_replace_numbers!("zéro", "zéro");
+        assert_replace_numbers!("zéro cinq", "05");
+        assert_replace_numbers!("zéro, cinq", "zéro, 5");
     }
 
     #[test]
@@ -280,19 +283,4 @@ mod tests {
             "12,99, 120,05, 1,236."
         );
     }
-
-    // #[test]
-    // fn test_homonyms(){
-    //     assert_replace_numbers!(
-    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
-    //         les uns et les autres ; une suite de chiffres : un, deux, trois !",
-    //         "Ne pas confondre un article ou un nom avec un chiffre et inversement : \
-    //         les uns et les autres ; une suite de chiffres : 1, 2, 3 !"
-    //     );
-    //     let source = "Je n'en veux qu'un. J'annonce: le un";
-    //     assert_replace_numbers!(
-    //         source,
-    //         source
-    //     );
-    // }
 }

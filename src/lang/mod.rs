@@ -1,3 +1,4 @@
+pub mod en;
 pub mod fr;
 
 use crate::digit_string::DigitString;

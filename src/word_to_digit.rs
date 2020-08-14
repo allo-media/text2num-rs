@@ -53,11 +53,13 @@ impl<'a> WordToDigitParser<'a> {
     }
 }
 
+/// Interpret the `text` as a number, and translate it into digits.
+/// Return an error if the text couldn't be undestood as a correct number.
 pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
     let mut builder = DigitString::new();
     let mut marker: Option<String> = None;
     let mut incomplete: bool = false;
-    for token in text.split(' ') {
+    for token in text.split_whitespace().map(|w| w.split('-')).flatten() {
         incomplete = match lang.apply(token, &mut builder) {
             Err(Error::Incomplete) => true,
             Ok(()) => false,
@@ -72,6 +74,8 @@ pub fn text2digits<T: Lang>(lang: &T, text: &str) -> Result<String, Error> {
     }
 }
 
+/// Find spelled numbers in the `text` and replace them by their digit representation.
+/// Isolated zeros are not converted.
 pub fn replace_numbers(text: &str, lang: &dyn Lang) -> String {
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);
@@ -96,8 +100,11 @@ pub fn replace_numbers(text: &str, lang: &dyn Lang) -> String {
             // First failed parse after one or more successful ones:
             // we reached the end of a number.
             Err(_) if parser.has_number() => {
-                out.drain(match_start..match_end);
-                out.insert(match_start, parser.into_string());
+                let digits = parser.into_string();
+                if digits != "0" {
+                    out.drain(match_start..match_end);
+                    out.insert(match_start, digits);
+                }
                 parser = WordToDigitParser::new(lang);
                 // The end of that match may be the start of another
                 if parser.push(&lo_token).is_ok() {
@@ -111,8 +118,11 @@ pub fn replace_numbers(text: &str, lang: &dyn Lang) -> String {
         }
     }
     if parser.has_number() {
-        out.drain(match_start..match_end);
-        out.insert(match_start, parser.into_string());
+        let digits = parser.into_string();
+        if digits != "0" {
+            out.drain(match_start..match_end);
+            out.insert(match_start, digits);
+        }
     }
     out.join("")
 }
