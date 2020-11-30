@@ -173,6 +173,7 @@ mod tests {
         assert_text2digits!("thirty-second", "32nd");
         assert_text2digits!("fiftieth", "50th");
         assert_text2digits!("seventy fourth", "74th");
+        assert_text2digits!("twenty-eighth", "28th");
     }
 
     #[test]
@@ -225,6 +226,15 @@ mod tests {
         assert_replace_numbers!("one two three four twenty five", "1 2 3 4 25");
         assert_replace_numbers!("one two three four twenty, five", "1 2 3 4 20, 5");
         assert_replace_numbers!("twenty-one, thirty-one.", "21, 31.");
+    }
+
+    #[test]
+    fn test_and() {
+        assert_replace_numbers!(
+            "I want five hundred and sixty six rupees",
+            "I want 566 rupees"
+        );
+        assert_replace_numbers!("fifty sixty thirty and eleven", "50 60 30 and 11");
     }
 
     #[test]

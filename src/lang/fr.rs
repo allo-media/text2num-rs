@@ -282,5 +282,6 @@ mod tests {
             "Douze virgule quatre-vingt dix-neuf, cent vingt virgule zéro cinq, un virgule deux cent trente six.",
             "12,99, 120,05, 1,236."
         );
+        assert_replace_numbers!("zéro virgule cent douze", "0,112");
     }
 }
