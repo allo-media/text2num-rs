@@ -99,16 +99,16 @@ impl LangInterpretor for French {
         word == "virgule"
     }
 
-    fn format(&self, b: DigitString, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<String>) -> String {
         if let Some(marker) = morph_marker {
-            format!("{}{}", b.into_string(), marker)
+            format!("{}{}", b, marker)
         } else {
-            b.into_string()
+            b
         }
     }
 
-    fn format_decimal(&self, int: DigitString, dec: DigitString) -> String {
-        format!("{},{}", int.into_string(), dec.into_string())
+    fn format_decimal(&self, int: String, dec: String) -> String {
+        format!("{},{}", int, dec)
     }
 
     fn get_morph_marker(&self, word: &str) -> Option<String> {
@@ -119,6 +119,10 @@ impl LangInterpretor for French {
         } else {
             None
         }
+    }
+
+    fn is_conjunction(&self, word: &str) -> bool {
+        word == "et"
     }
 }
 
@@ -140,7 +144,7 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f), $res)
+            assert_eq!(replace_numbers($text, &f, 10.0), $res)
         };
     }
 
@@ -265,15 +269,18 @@ mod tests {
         assert_replace_numbers!("treize mille zéro quatre-vingts", "13000 080");
         assert_replace_numbers!("zéro", "zéro");
         assert_replace_numbers!("zéro cinq", "05");
-        assert_replace_numbers!("zéro, cinq", "zéro, 5");
+        assert_replace_numbers!("zéro, cinq", "0, 5");
+        assert_replace_numbers!("Votre service est zéro !", "Votre service est zéro !");
     }
 
     #[test]
     fn test_replace_numbers_ordinals() {
         assert_replace_numbers!(
-            "Cinquième second troisième vingt et unième centième mille deux cent trentième.",
-            "5ème second 3ème 21ème 100ème 1230ème."
+            "Cinquième deuxième troisième vingt et unième centième mille deux cent trentième.",
+            "5ème 2ème 3ème 21ème 100ème 1230ème."
         );
+        assert_replace_numbers!("première seconde", "première seconde");
+        assert_replace_numbers!("premier second", "premier second");
     }
 
     #[test]
@@ -283,5 +290,23 @@ mod tests {
             "12,99, 120,05, 1,236."
         );
         assert_replace_numbers!("zéro virgule cent douze", "0,112");
+    }
+
+    #[test]
+    fn test_isolate() {
+        assert_replace_numbers!(
+            "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre.",
+            "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre."
+        );
+        assert_replace_numbers!(
+            "Mais on peut remplacer une suite : un, deux, trois.",
+            "Mais on peut remplacer une suite : 1, 2, 3."
+        );
+        assert_replace_numbers!("Un logement neuf", "Un logement neuf");
+        assert_replace_numbers!(
+            "Mon premier arrive avant mon deuxième et mon troisième",
+            "Mon premier arrive avant mon deuxième et mon troisième"
+        );
+        assert_replace_numbers!("Premier, deuxième, troisième", "Premier, 2ème, 3ème");
     }
 }

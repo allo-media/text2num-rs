@@ -132,6 +132,7 @@ impl DigitString {
         }
     }
 
+    /// Formal decimal string reprensentation with leading zeroes
     pub fn into_string(self) -> String {
         // we know that the string is valid.
         let mut res = "0".repeat(self.leading_zeroes);

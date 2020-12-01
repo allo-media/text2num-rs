@@ -5,7 +5,7 @@ use super::LangInterpretor;
 
 fn lemmatize(word: &str) -> &str {
     // brute, blind removal of 's' ending is enough here
-    if word.ends_with('s') {
+    if word.ends_with('s') && word != "seconds" {
         word.trim_end_matches('s')
     } else {
         word
@@ -75,16 +75,16 @@ impl LangInterpretor for English {
         word == "point"
     }
 
-    fn format(&self, b: DigitString, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<String>) -> String {
         if let Some(marker) = morph_marker {
-            format!("{}{}", b.into_string(), marker)
+            format!("{}{}", b, marker)
         } else {
-            b.into_string()
+            b
         }
     }
 
-    fn format_decimal(&self, int: DigitString, dec: DigitString) -> String {
-        format!("{}.{}", int.into_string(), dec.into_string())
+    fn format_decimal(&self, int: String, dec: String) -> String {
+        format!("{}.{}", int, dec)
     }
 
     fn get_morph_marker(&self, word: &str) -> Option<String> {
@@ -96,12 +96,15 @@ impl LangInterpretor for English {
             match word {
                 "first" => Some("st".to_owned()),
                 "second" => Some("nd".to_owned()),
-                "seconds" => Some("nds".to_owned()),
                 "third" => Some("rd".to_owned()),
                 "thirds" => Some("rds".to_owned()),
                 _ => None,
             }
         }
+    }
+
+    fn is_conjunction(&self, word: &str) -> bool {
+        word == "and"
     }
 }
 
@@ -123,7 +126,7 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = English {};
-            assert_eq!(replace_numbers($text, &f), $res)
+            assert_eq!(replace_numbers($text, &f, 10.0), $res)
         };
     }
 
@@ -262,6 +265,7 @@ mod tests {
             "first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth.",
             "1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th, 9th, 10th."
         );
+        assert_replace_numbers!("Twenty seconds", "20 seconds");
     }
 
     #[test]
@@ -276,5 +280,16 @@ mod tests {
     #[test]
     fn test_uppercase() {
         assert_replace_numbers!("FIFTEEN ONE TEN ONE", "15 1 10 1");
+    }
+
+    #[test]
+    fn test_isolates() {
+        assert_replace_numbers!(
+            "This is the one I was waiting for",
+            "This is the one I was waiting for"
+        );
+        assert_replace_numbers!("First, let's think twice!", "First, let's think twice!");
+        assert_replace_numbers!("Five o'clock", "Five o'clock");
+        assert_replace_numbers!("One may count: one two three", "One may count: 1 2 3");
     }
 }
