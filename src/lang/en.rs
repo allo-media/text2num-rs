@@ -130,6 +130,13 @@ mod tests {
         };
     }
 
+    macro_rules! assert_replace_all_numbers {
+        ($text:expr, $res:expr) => {
+            let f = English {};
+            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+        };
+    }
+
     macro_rules! assert_invalid {
         ($text:expr) => {
             let f = English {};
@@ -288,6 +295,11 @@ mod tests {
             "This is the one I was waiting for",
             "This is the one I was waiting for"
         );
+        assert_replace_all_numbers!(
+            "This is the one I was waiting for",
+            "This is the 1 I was waiting for"
+        );
+
         assert_replace_numbers!("First, let's think twice!", "First, let's think twice!");
         assert_replace_numbers!("Five o'clock", "Five o'clock");
         assert_replace_numbers!("One may count: one two three", "One may count: 1 2 3");

@@ -146,7 +146,6 @@ impl NumTracker {
                 tokens.insert(start, repr);
             }
         }
-        //
         tokens.join("")
     }
 }
