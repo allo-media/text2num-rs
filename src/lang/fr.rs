@@ -148,6 +148,13 @@ mod tests {
         };
     }
 
+    macro_rules! assert_replace_all_numbers {
+        ($text:expr, $res:expr) => {
+            let f = French {};
+            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+        };
+    }
+
     macro_rules! assert_invalid {
         ($text:expr) => {
             let f = French {};
@@ -298,6 +305,10 @@ mod tests {
             "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre.",
             "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre."
         );
+        assert_replace_all_numbers!(
+            "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre.",
+            "On ne doit pas remplacer 1 article ou 1 pronom, l'un comme l'autre."
+        );
         assert_replace_numbers!(
             "Mais on peut remplacer une suite : un, deux, trois.",
             "Mais on peut remplacer une suite : 1, 2, 3."
@@ -306,6 +317,10 @@ mod tests {
         assert_replace_numbers!(
             "Mon premier arrive avant mon deuxième et mon troisième",
             "Mon premier arrive avant mon deuxième et mon troisième"
+        );
+        assert_replace_all_numbers!(
+            "Mon premier arrive avant mon deuxième et mon troisième",
+            "Mon premier arrive avant mon 2ème et mon 3ème"
         );
         assert_replace_numbers!("Premier, deuxième, troisième", "Premier, 2ème, 3ème");
     }
