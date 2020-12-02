@@ -4,7 +4,7 @@ use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
 
-type Match = (usize, usize, String, f64, bool);
+type Match = (usize, usize, String);
 
 pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
@@ -55,7 +55,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
     }
 
     pub fn has_number(&self) -> bool {
-        self.int_part.len() > 0
+        !self.int_part.is_empty()
     }
 
     pub fn is_ordinal(&self) -> bool {
@@ -84,28 +84,88 @@ pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, E
     }
 }
 
+#[derive(Debug)]
+struct NumTracker {
+    matches: Vec<Match>,
+    keep: Vec<bool>,
+    threshold: f64,
+    last_match_is_contiguous: bool,
+    match_start: usize,
+    match_end: usize,
+}
+
+impl NumTracker {
+    fn new(threshold: f64) -> Self {
+        Self {
+            matches: Vec::with_capacity(2),
+            keep: Vec::with_capacity(2),
+            threshold,
+            last_match_is_contiguous: false,
+            match_start: 0,
+            match_end: 0,
+        }
+    }
+
+    fn number_advanced(&mut self, pos: usize) {
+        if self.match_start == self.match_end {
+            self.match_start = pos
+        }
+        self.match_end = pos + 1;
+    }
+
+    fn number_end(&mut self, is_ordinal: bool, digits: String, value: f64) {
+        if self.last_match_is_contiguous {
+            if let Some(prev) = self.keep.last_mut() {
+                *prev = true
+            }
+            self.keep.push(true);
+        } else if digits.len() > 1 && !is_ordinal || value > self.threshold {
+            self.keep.push(true);
+        } else {
+            self.keep.push(false);
+        }
+        //
+        self.last_match_is_contiguous = true;
+        self.matches
+            .push((self.match_start, self.match_end, digits));
+        self.match_start = self.match_end;
+    }
+
+    fn outside_number<T: LangInterpretor>(&mut self, token: &str, lang: &T) {
+        self.last_match_is_contiguous = self.last_match_is_contiguous
+            && token.chars().any(|c| !c.is_alphabetic())
+            || lang.is_conjunction(token);
+    }
+
+    fn replace_and_join(mut self, mut tokens: Vec<String>) -> String {
+        self.keep.reverse();
+        self.matches.reverse();
+        for (replace, (start, end, repr)) in self.keep.into_iter().zip(self.matches) {
+            if replace {
+                tokens.drain(start..end);
+                tokens.insert(start, repr);
+            }
+        }
+        //
+        tokens.join("")
+    }
+}
+
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digists strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64) -> String {
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);
-    let mut matches: Vec<Match> = Vec::with_capacity(2);
-    let mut match_start: usize = 0;
-    let mut match_end: usize = 0;
-    for token in text.split_word_bounds() {
+    let mut tracker = NumTracker::new(threshold);
+    for (pos, token) in text.split_word_bounds().enumerate() {
         out.push(token.to_owned());
-        if token == "-" || token.chars().all(char::is_whitespace) {
+        if token == "-" || is_whitespace(token) {
             continue;
         }
         let lo_token = token.to_lowercase();
         match parser.push(&lo_token) {
             // Set match_start on first successful parse
-            Ok(()) if match_start == match_end => {
-                match_start = out.len() - 1;
-                match_end = out.len()
-            }
-            // Advance match_end on each new contiguous parse
-            Ok(()) => match_end = out.len(),
+            Ok(()) => tracker.number_advanced(pos),
             // Skip potential linking words
             Err(Error::Incomplete) => (),
             // First failed parse after one or more successful ones:
@@ -113,55 +173,26 @@ pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64)
             Err(_) if parser.has_number() => {
                 let is_ordinal = parser.is_ordinal();
                 let (digits, value) = parser.into_string_and_value();
-                matches.push((match_start, match_end, digits, value, is_ordinal));
+                tracker.number_end(is_ordinal, digits, value);
                 parser = WordToDigitParser::new(lang);
                 // The end of that match may be the start of another
                 if parser.push(&lo_token).is_ok() {
-                    match_start = out.len() - 1;
-                    match_end = out.len();
+                    tracker.number_advanced(pos);
                 } else {
-                    match_start = match_end
+                    tracker.outside_number(token, lang)
                 }
             }
-            Err(_) => (),
+            Err(_) => tracker.outside_number(token, lang),
         }
     }
     if parser.has_number() {
         let is_ordinal = parser.is_ordinal();
         let (digits, value) = parser.into_string_and_value();
-        matches.push((match_start, match_end, digits, value, is_ordinal));
+        tracker.number_end(is_ordinal, digits, value);
     }
-    // Filter isolates
-    let mut keep = vec![false; matches.len()];
-    let mut last_match = 0usize;
-    for (i, (start, end, repr, val, is_ord)) in matches.iter().enumerate() {
-        let main_crit = repr.len() > 1 && !is_ord || *val >= threshold;
-        if main_crit {
-            keep[i] = true
-        }
-        // if we are part of a cluster, it's ok
-        if i > 0
-            && out[(last_match + 1)..*start]
-                .iter()
-                .all(|inter| is_soft_sep(inter, lang))
-        {
-            keep[i] = true;
-            keep[i - 1] = true;
-        }
-        last_match = *end;
-    }
-    keep.reverse();
-    matches.reverse();
-    for (replace, (start, end, repr, _val, _)) in keep.into_iter().zip(matches) {
-        if replace {
-            out.drain(start..end);
-            out.insert(start, repr);
-        }
-    }
-    //
-    out.join("")
+    tracker.replace_and_join(out)
 }
 
-fn is_soft_sep<T: LangInterpretor>(inter: &str, lang: &T) -> bool {
-    return inter.chars().any(|c| !c.is_alphabetic()) || lang.is_conjunction(&inter);
+fn is_whitespace(token: &str) -> bool {
+    token.chars().all(char::is_whitespace)
 }

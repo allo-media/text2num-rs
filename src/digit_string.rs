@@ -89,7 +89,7 @@ impl DigitString {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.buffer.is_empty()
+        self.buffer.is_empty() && self.leading_zeroes == 0
     }
 
     pub fn len(&self) -> usize {
