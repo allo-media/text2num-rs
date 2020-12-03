@@ -1,7 +1,10 @@
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
+mod vocabulary;
+
 use super::LangInterpretor;
+use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
     // brute, blind removal of 's' ending is enough here
@@ -121,8 +124,8 @@ impl LangInterpretor for French {
         }
     }
 
-    fn is_conjunction(&self, word: &str) -> bool {
-        word == "et"
+    fn is_insignificant(&self, word: &str) -> bool {
+        INSIGNIFICANT.contains(word)
     }
 }
 
@@ -300,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn test_isolate() {
+    fn test_isolates() {
         assert_replace_numbers!(
             "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre.",
             "On ne doit pas remplacer un article ou un pronom, l'un comme l'autre."
@@ -323,5 +326,13 @@ mod tests {
             "Mon premier arrive avant mon 2ème et mon 3ème"
         );
         assert_replace_numbers!("Premier, deuxième, troisième", "Premier, 2ème, 3ème");
+    }
+
+    #[test]
+    fn test_isolates_with_noise() {
+        assert_replace_numbers!(
+            "alors deux et trois plus cinq euh six puis sept et encore huit mois quatre c'est bien trois",
+            "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 mois 4 c'est bien 3"
+        );
     }
 }

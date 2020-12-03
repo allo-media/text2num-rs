@@ -134,7 +134,7 @@ impl NumTracker {
     fn outside_number<T: LangInterpretor>(&mut self, token: &str, lang: &T) {
         self.last_match_is_contiguous = self.last_match_is_contiguous
             && token.chars().any(|c| !c.is_alphabetic())
-            || lang.is_conjunction(token);
+            || lang.is_insignificant(token);
     }
 
     fn replace_and_join(mut self, mut tokens: Vec<String>) -> String {
