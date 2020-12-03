@@ -89,7 +89,7 @@ impl DigitString {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.buffer.is_empty()
+        self.buffer.is_empty() && self.leading_zeroes == 0
     }
 
     pub fn len(&self) -> usize {
@@ -132,6 +132,7 @@ impl DigitString {
         }
     }
 
+    /// Formal decimal string representation with leading zeroes
     pub fn into_string(self) -> String {
         // we know that the string is valid.
         let mut res = "0".repeat(self.leading_zeroes);

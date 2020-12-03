@@ -17,7 +17,8 @@ mod tests {
         assert_eq!(
             replace_numbers(
                 "Pour la cinquième fois: vingt-cinq plus quarante-huit égalent soixante-treize",
-                &french
+                &french,
+                0.0
             ),
             "Pour la 5ème fois: 25 plus 48 égalent 73"
         );
@@ -29,7 +30,8 @@ mod tests {
         assert_eq!(
             replace_numbers(
                 "For the fifth time: twenty-five plus fourty-eight equal seventy-three",
-                &english
+                &english,
+                0.0
             ),
             "For the 5th time: 25 plus 48 equal 73"
         );

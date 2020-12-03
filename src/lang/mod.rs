@@ -9,8 +9,9 @@ pub trait LangInterpretor {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error>;
     fn get_morph_marker(&self, word: &str) -> Option<String>;
     fn is_decimal_sep(&self, word: &str) -> bool;
-    fn format(&self, b: DigitString, morph_marker: Option<String>) -> String;
-    fn format_decimal(&self, int: DigitString, dec: DigitString) -> String;
+    fn format(&self, b: String, morph_marker: Option<String>) -> String;
+    fn format_decimal(&self, int: String, dec: String) -> String;
+    fn is_conjunction(&self, word: &str) -> bool;
 }
 
 pub enum Language {
@@ -50,17 +51,24 @@ impl LangInterpretor for Language {
         }
     }
 
-    fn format(&self, b: DigitString, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<String>) -> String {
         match self {
             Language::French(l) => l.format(b, morph_marker),
             Language::English(l) => l.format(b, morph_marker),
         }
     }
 
-    fn format_decimal(&self, int: DigitString, dec: DigitString) -> String {
+    fn format_decimal(&self, int: String, dec: String) -> String {
         match self {
             Language::French(l) => l.format_decimal(int, dec),
             Language::English(l) => l.format_decimal(int, dec),
+        }
+    }
+
+    fn is_conjunction(&self, word: &str) -> bool {
+        match self {
+            Language::French(l) => l.is_conjunction(word),
+            Language::English(l) => l.is_conjunction(word),
         }
     }
 }
