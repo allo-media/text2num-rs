@@ -11,7 +11,7 @@ pub trait LangInterpretor {
     fn is_decimal_sep(&self, word: &str) -> bool;
     fn format(&self, b: String, morph_marker: Option<String>) -> String;
     fn format_decimal(&self, int: String, dec: String) -> String;
-    fn is_conjunction(&self, word: &str) -> bool;
+    fn is_insignificant(&self, word: &str) -> bool;
 }
 
 pub enum Language {
@@ -65,10 +65,10 @@ impl LangInterpretor for Language {
         }
     }
 
-    fn is_conjunction(&self, word: &str) -> bool {
+    fn is_insignificant(&self, word: &str) -> bool {
         match self {
-            Language::French(l) => l.is_conjunction(word),
-            Language::English(l) => l.is_conjunction(word),
+            Language::French(l) => l.is_insignificant(word),
+            Language::English(l) => l.is_insignificant(word),
         }
     }
 }

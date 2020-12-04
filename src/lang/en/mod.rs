@@ -1,7 +1,10 @@
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
+mod vocabulary;
+
 use super::LangInterpretor;
+use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
     // brute, blind removal of 's' ending is enough here
@@ -103,8 +106,8 @@ impl LangInterpretor for English {
         }
     }
 
-    fn is_conjunction(&self, word: &str) -> bool {
-        word == "and"
+    fn is_insignificant(&self, word: &str) -> bool {
+        INSIGNIFICANT.contains(word)
     }
 }
 
@@ -303,5 +306,13 @@ mod tests {
         assert_replace_numbers!("First, let's think twice!", "First, let's think twice!");
         assert_replace_numbers!("Five o'clock", "Five o'clock");
         assert_replace_numbers!("One may count: one two three", "One may count: 1 2 3");
+    }
+
+    #[test]
+    fn test_isolates_with_noise() {
+        assert_replace_numbers!(
+            "four plus five so eleven then three uh six uh well seven",
+            "4 plus 5 so 11 then 3 uh 6 uh well 7"
+        );
     }
 }

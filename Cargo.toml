@@ -9,3 +9,4 @@ name = "text2num"
 
 [dependencies]
 unicode-segmentation = "1.6"
+phf = { version = "0.8", features = ["macros"] }
