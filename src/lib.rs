@@ -25,6 +25,15 @@ mod tests {
     }
 
     #[test]
+    fn test_zeros_fr() {
+        let french = Language::french();
+        assert_eq!(
+            replace_numbers("zéro zéro trente quatre vingt", &french, 10.),
+            "0034 20"
+        );
+    }
+
+    #[test]
     fn test_access_en() {
         let english = Language::english();
         assert_eq!(

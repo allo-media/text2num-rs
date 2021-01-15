@@ -151,7 +151,7 @@ impl NumTracker {
 }
 
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
-/// Isolated digists strictly under `threshold` are not converted (set to 0.0 to convert everything).
+/// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64) -> String {
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);

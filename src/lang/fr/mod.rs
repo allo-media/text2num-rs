@@ -65,8 +65,8 @@ impl LangInterpretor for French {
                 b"80" => b.fput(b"96"),
                 _ => b.put(b"16"),
             },
-            "vingt" | "vingtième" => match b.peek(1) {
-                b"4" => b.fput(b"80"),
+            "vingt" | "vingtième" => match b.peek(2) {
+                b"04" | b"4" => b.fput(b"80"),
                 _ => b.put(b"20"),
             },
             "trente" | "trentième" => b.put(b"30"),
@@ -131,7 +131,7 @@ impl LangInterpretor for French {
 
 #[cfg(test)]
 mod tests {
-    use super::French;
+    use super::*;
     use crate::word_to_digit::{replace_numbers, text2digits};
 
     macro_rules! assert_text2digits {
@@ -164,6 +164,15 @@ mod tests {
             let res = text2digits($text, &f);
             assert!(res.is_err());
         };
+    }
+
+    #[test]
+    fn test_apply_steps() {
+        let f = French {};
+        let mut b = DigitString::new();
+        assert!(f.apply("trente", &mut b).is_ok());
+        assert!(f.apply("quatre", &mut b).is_ok());
+        assert!(f.apply("vingt", &mut b).is_err());
     }
 
     #[test]
@@ -238,6 +247,7 @@ mod tests {
         assert_invalid!("dix deux");
         assert_invalid!("dix unième");
         assert_invalid!("vingtième cinq");
+        assert_invalid!("zéro zéro trente quatre vingt");
     }
 
     #[test]
