@@ -1,6 +1,7 @@
 pub mod digit_string;
 pub mod error;
 pub mod lang;
+mod tokenizer;
 pub mod word_to_digit;
 
 pub use error::Error;

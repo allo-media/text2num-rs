@@ -4,8 +4,9 @@
 //! valid construction at every step.
 
 use super::error::Error;
+use std::ops::Deref;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DigitString {
     buffer: Vec<u8>,
     leading_zeroes: usize,
@@ -138,6 +139,14 @@ impl DigitString {
         let mut res = "0".repeat(self.leading_zeroes);
         res.push_str(&String::from_utf8(self.buffer).unwrap());
         res
+    }
+}
+
+impl Deref for DigitString {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        &self.buffer
     }
 }
 

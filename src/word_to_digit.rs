@@ -1,8 +1,7 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
+use crate::tokenizer::Tokenizer;
 
 type Match = (usize, usize, String);
 
@@ -26,17 +25,34 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
     }
 
     pub fn push(&mut self, word: &str) -> Result<(), Error> {
-        let status = if self.is_dec {
-            self.lang.apply(word, &mut self.dec_part)
+        let (status, marker) = if word.contains('-') {
+            // it's a group. It's should succeed as a whole, or not at all (transactional)
+            let mut group = DigitString::new();
+            match apply_group(word.split('-'), &mut group, self.lang) {
+                Ok(marker) => {
+                    let status = if self.is_dec {
+                        self.dec_part.put(&group)
+                    } else {
+                        self.int_part.put(&group)
+                    };
+                    (status, marker)
+                }
+                Err(err) => (Err(err), None),
+            }
         } else {
-            self.lang.apply(word, &mut self.int_part)
+            let status = if self.is_dec {
+                self.lang.apply(word, &mut self.dec_part)
+            } else {
+                self.lang.apply(word, &mut self.int_part)
+            };
+            (status, self.lang.get_morph_marker(word))
         };
         if status.is_err() && !self.is_dec && self.lang.is_decimal_sep(word) {
             self.is_dec = true;
             Err(Error::Incomplete)
         } else {
-            if status.is_ok() {
-                self.morph_marker = self.lang.get_morph_marker(word);
+            if status.is_ok() && self.morph_marker.is_none() {
+                self.morph_marker = marker;
             }
             status
         }
@@ -63,24 +79,41 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
     }
 }
 
-/// Interpret the `text` as a integer number, and translate it into digits and value
-/// Return an error if the text couldn't be undestood as a correct number.
-pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
-    let mut builder = DigitString::new();
-    let mut marker: Option<String> = None;
+fn apply_group<'a, I: Iterator<Item = &'a str>, T: LangInterpretor>(
+    group: I,
+    b: &mut DigitString,
+    lang: &T,
+) -> Result<Option<String>, Error> {
     let mut incomplete: bool = false;
-    for token in text.split_whitespace().map(|w| w.split('-')).flatten() {
-        incomplete = match lang.apply(token, &mut builder) {
+    let mut marker: Option<String> = None;
+    for token in group {
+        incomplete = match lang.apply(token, b) {
             Err(Error::Incomplete) => true,
             Ok(()) => false,
             Err(error) => return Err(error),
         };
-        marker = lang.get_morph_marker(token);
+        if marker.is_none() {
+            marker = lang.get_morph_marker(token);
+        }
     }
     if incomplete {
         Err(Error::Incomplete)
     } else {
-        Ok(lang.format(builder.into_string(), marker))
+        Ok(marker)
+    }
+}
+
+/// Interpret the `text` as a integer number, and translate it into digits and value
+/// Return an error if the text couldn't be undestood as a correct number.
+pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
+    let mut builder = DigitString::new();
+    match apply_group(
+        text.split_whitespace().map(|w| w.split('-')).flatten(),
+        &mut builder,
+        lang,
+    ) {
+        Ok(marker) => Ok(lang.format(builder.into_string(), marker)),
+        Err(err) => Err(err),
     }
 }
 
@@ -156,7 +189,7 @@ pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64)
     let mut parser = WordToDigitParser::new(lang);
     let mut out: Vec<String> = Vec::with_capacity(40);
     let mut tracker = NumTracker::new(threshold);
-    for (pos, token) in text.split_word_bounds().enumerate() {
+    for (pos, token) in Tokenizer::new(text).enumerate() {
         out.push(token.to_owned());
         if token == "-" || is_whitespace(token) {
             continue;
@@ -194,4 +227,17 @@ pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64)
 
 fn is_whitespace(token: &str) -> bool {
     token.chars().all(char::is_whitespace)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lang::Language;
+
+    #[test]
+    fn test_grouping() {
+        let fr = Language::french();
+        let wyget = replace_numbers("zéro zéro trente quatre-vingt-dix-sept", &fr, 10.0);
+        assert_eq!(wyget, "0030 97");
+    }
 }
