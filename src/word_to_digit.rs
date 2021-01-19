@@ -26,7 +26,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 
     pub fn push(&mut self, word: &str) -> Result<(), Error> {
         let (status, marker) = if word.contains('-') {
-            // it's a group. It's should succeed as a whole, or not at all (transactional)
+            // it's a group. It should succeed as a whole, or not at all (transactional)
             let mut group = DigitString::new();
             match apply_group(word.split('-'), &mut group, self.lang) {
                 Ok(marker) => {
