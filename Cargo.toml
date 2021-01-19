@@ -1,6 +1,6 @@
 [package]
 name = "text2num-rs"
-version = "1.5.1"
+version = "1.5.2"
 authors = ["Romuald Texier-Marcadé <r.texiermarcade@allo-media.fr>"]
 edition = "2018"
 
@@ -8,5 +8,4 @@ edition = "2018"
 name = "text2num"
 
 [dependencies]
-unicode-segmentation = "1.6"
 phf = { version = "0.8", features = ["macros"] }

@@ -1,5 +1,3 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
