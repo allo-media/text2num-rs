@@ -3,8 +3,6 @@ use crate::error::Error;
 use crate::lang::LangInterpretor;
 use crate::tokenizer::Tokenizer;
 
-type Match = (usize, usize, String);
-
 pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
     dec_part: DigitString,
@@ -103,7 +101,7 @@ fn apply_group<'a, I: Iterator<Item = &'a str>, T: LangInterpretor>(
     }
 }
 
-/// Interpret the `text` as a integer number, and translate it into digits and value
+/// Interpret the `text` as a integer number or ordinal, and translate it into digits.
 /// Return an error if the text couldn't be undestood as a correct number.
 pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
     let mut builder = DigitString::new();
@@ -117,9 +115,29 @@ pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, E
     }
 }
 
+pub trait Token: From<String> + Clone {
+    fn text(&self) -> &str;
+    fn text_lowercase(&self) -> String;
+    fn update<I: Iterator<Item = Self>>(&mut self, replaced: I);
+}
+
+impl Token for String {
+    fn text(&self) -> &str {
+        self.as_ref()
+    }
+
+    fn text_lowercase(&self) -> String {
+        self.to_lowercase()
+    }
+
+    fn update<I: Iterator<Item = Self>>(&mut self, _replaced: I) {
+        // nop
+    }
+}
+
 #[derive(Debug)]
-struct NumTracker {
-    matches: Vec<Match>,
+struct NumTracker<T> {
+    matches: Vec<(usize, usize, T)>,
     keep: Vec<bool>,
     threshold: f64,
     last_match_is_contiguous: bool,
@@ -127,7 +145,7 @@ struct NumTracker {
     match_end: usize,
 }
 
-impl NumTracker {
+impl<T: Token> NumTracker<T> {
     fn new(threshold: f64) -> Self {
         Self {
             matches: Vec::with_capacity(2),
@@ -152,7 +170,7 @@ impl NumTracker {
                 *prev = true
             }
             self.keep.push(true);
-        } else if digits.len() > 1 && !is_ordinal || value > self.threshold {
+        } else if digits.text().len() > 1 && !is_ordinal || value > self.threshold {
             self.keep.push(true);
         } else {
             self.keep.push(false);
@@ -160,41 +178,44 @@ impl NumTracker {
         //
         self.last_match_is_contiguous = true;
         self.matches
-            .push((self.match_start, self.match_end, digits));
+            .push((self.match_start, self.match_end, digits.into()));
         self.match_start = self.match_end;
     }
 
-    fn outside_number<T: LangInterpretor>(&mut self, token: &str, lang: &T) {
+    fn outside_number<L: LangInterpretor>(&mut self, token: T, lang: &L) {
         self.last_match_is_contiguous = self.last_match_is_contiguous
-            && token.chars().any(|c| !c.is_alphabetic())
-            || lang.is_insignificant(token);
+            && token.text().chars().any(|c| !c.is_alphabetic())
+            || lang.is_insignificant(token.text());
     }
 
-    fn replace_and_join(mut self, mut tokens: Vec<String>) -> String {
+    fn replace(mut self, tokens: &mut Vec<T>) {
         self.keep.reverse();
         self.matches.reverse();
-        for (replace, (start, end, repr)) in self.keep.into_iter().zip(self.matches) {
+        for (replace, (start, end, mut repr)) in self.keep.into_iter().zip(self.matches) {
             if replace {
-                tokens.drain(start..end);
+                repr.update(tokens.drain(start..end));
                 tokens.insert(start, repr);
             }
         }
-        tokens.join("")
     }
 }
 
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64) -> String {
+pub fn rewrite_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
+    input: I,
+    lang: &L,
+    threshold: f64,
+) -> Vec<T> {
     let mut parser = WordToDigitParser::new(lang);
-    let mut out: Vec<String> = Vec::with_capacity(40);
-    let mut tracker = NumTracker::new(threshold);
-    for (pos, token) in Tokenizer::new(text).enumerate() {
-        out.push(token.to_owned());
-        if token == "-" || is_whitespace(token) {
+    let mut out: Vec<T> = Vec::with_capacity(40);
+    let mut tracker: NumTracker<T> = NumTracker::new(threshold);
+    for (pos, token) in input.enumerate() {
+        out.push(token.clone());
+        if token.text() == "-" || is_whitespace(token.text()) {
             continue;
         }
-        let lo_token = token.to_lowercase();
+        let lo_token = token.text_lowercase();
         match parser.push(&lo_token) {
             // Set match_start on first successful parse
             Ok(()) => tracker.number_advanced(pos),
@@ -222,7 +243,15 @@ pub fn replace_numbers<T: LangInterpretor>(text: &str, lang: &T, threshold: f64)
         let (digits, value) = parser.into_string_and_value();
         tracker.number_end(is_ordinal, digits, value);
     }
-    tracker.replace_and_join(out)
+    tracker.replace(&mut out);
+    out
+}
+
+/// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
+/// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
+pub fn replace_numbers<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
+    let out = rewrite_numbers(Tokenizer::new(text).map(|s| s.to_owned()), lang, threshold);
+    out.join("")
 }
 
 fn is_whitespace(token: &str) -> bool {
@@ -239,5 +268,23 @@ mod tests {
         let fr = Language::french();
         let wyget = replace_numbers("zéro zéro trente quatre-vingt-dix-sept", &fr, 10.0);
         assert_eq!(wyget, "0030 97");
+    }
+
+    #[test]
+    fn bench() {
+        let fr = Language::french();
+        // increase to bench
+        for _ in 0..1 {
+            let wyget = replace_numbers(
+                "Vingt-cinq vaches, douze poulets et cent vingt-cinq kg de pommes de terre.
+            Mille deux cent soixante-six clous. zéro neuf soixante zéro six douze vingt et un.
+            les uns et les autres ; une suite de chiffres : un, deux, trois !
+            cinquante trois mille millions deux cent quarante trois mille sept cent vingt quatre.
+            ",
+                &fr,
+                10.0,
+            );
+            assert_eq!(wyget, "25 vaches, 12 poulets et 125 kg de pommes de terre.\n            1266 clous. 09 60 06 12 21.\n            les uns et les autres ; une suite de chiffres : 1, 2, 3 !\n            53000243724.\n            ");
+        }
     }
 }
