@@ -199,7 +199,9 @@ mod tests {
     #[test]
     fn test_apply_variants() {
         assert_text2digits!("quatre vingt dix huit", "98");
+        assert_text2digits!("quatre-vingt dix-huit", "98");
         assert_text2digits!("nonante huit", "98");
+        assert_text2digits!("nonante-huit", "98");
         assert_text2digits!("soixante dix huit", "78");
         assert_text2digits!("septante huit", "78");
         assert_text2digits!("quatre vingt huit", "88");
