@@ -328,6 +328,7 @@ mod tests {
             "Mais on peut remplacer une suite : un, deux, trois.",
             "Mais on peut remplacer une suite : 1, 2, 3."
         );
+        assert_replace_numbers!("C'est un logement neuf", "C'est un logement neuf");
         assert_replace_numbers!("Un logement neuf", "Un logement neuf");
         assert_replace_numbers!(
             "Mon premier arrive avant mon deuxième et mon troisième",
