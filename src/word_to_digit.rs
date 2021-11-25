@@ -205,9 +205,10 @@ impl NumTracker {
     }
 
     fn outside_number<L: LangInterpretor, T: Token>(&mut self, token: &T, lang: &L) {
+        let text = token.text();
         self.last_match_is_contiguous = self.last_match_is_contiguous
-            && (token.text().chars().all(|c| !c.is_alphabetic())
-                || lang.is_insignificant(token.text()));
+            && (text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
+                || lang.is_insignificant(text));
     }
 
     fn replace<T: Token + From<String>>(mut self, tokens: &mut Vec<T>) {
