@@ -78,7 +78,7 @@ impl LangInterpretor for English {
         word == "point"
     }
 
-    fn format(&self, b: String, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<&str>) -> String {
         if let Some(marker) = morph_marker {
             format!("{}{}", b, marker)
         } else {
@@ -90,17 +90,17 @@ impl LangInterpretor for English {
         format!("{}.{}", int, dec)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<String> {
+    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         if word.ends_with("th") {
-            Some("th".to_owned())
+            Some("th")
         } else if word.ends_with("ths") {
-            Some("ths".to_owned())
+            Some("ths")
         } else {
             match word {
-                "first" => Some("st".to_owned()),
-                "second" => Some("nd".to_owned()),
-                "third" => Some("rd".to_owned()),
-                "thirds" => Some("rds".to_owned()),
+                "first" => Some("st"),
+                "second" => Some("nd"),
+                "third" => Some("rd"),
+                "thirds" => Some("rds"),
                 _ => None,
             }
         }

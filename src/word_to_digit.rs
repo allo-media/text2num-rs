@@ -7,7 +7,7 @@ pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,
-    morph_marker: Option<String>,
+    morph_marker: Option<&'static str>,
     lang: &'a T,
 }
 
@@ -81,9 +81,9 @@ fn apply_group<'a, I: Iterator<Item = &'a str>, T: LangInterpretor>(
     group: I,
     b: &mut DigitString,
     lang: &T,
-) -> Result<Option<String>, Error> {
+) -> Result<Option<&'static str>, Error> {
     let mut incomplete: bool = false;
-    let mut marker: Option<String> = None;
+    let mut marker: Option<&'static str> = None;
     for token in group {
         incomplete = match lang.apply(token, b) {
             Err(Error::Incomplete) => true,

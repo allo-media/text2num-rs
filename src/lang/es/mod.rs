@@ -92,7 +92,7 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format(&self, b: String, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<&str>) -> String {
         if let Some(marker) = morph_marker {
             format!("{}{}", b, marker)
         } else {
@@ -104,15 +104,15 @@ impl LangInterpretor for Spanish {
         format!("{},{}", int, dec)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<String> {
+    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         let sing = lemmatize(word).trim_start_matches("decimo");
         match sing {
             "primero" | "segundo" | "tercero" | "cuarto" | "quinto" | "sexto" | "séptimo"
-            | "octavo" | "ctavo" | "noveno" => Some("º".to_owned()),
+            | "octavo" | "ctavo" | "noveno" => Some("º"),
             "primera" | "segunda" | "tercera" | "cuarta" | "quinta" | "sexta" | "séptima"
-            | "octava" | "ctava" | "novena" => Some("ª".to_owned()),
-            ord if ord.ends_with("imo") => Some("º".to_owned()),
-            ord if ord.ends_with("ima") => Some("ª".to_owned()),
+            | "octava" | "ctava" | "novena" => Some("ª"),
+            ord if ord.ends_with("imo") => Some("º"),
+            ord if ord.ends_with("ima") => Some("ª"),
             _ => None,
         }
     }

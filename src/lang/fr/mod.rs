@@ -102,7 +102,7 @@ impl LangInterpretor for French {
         word == "virgule"
     }
 
-    fn format(&self, b: String, morph_marker: Option<String>) -> String {
+    fn format(&self, b: String, morph_marker: Option<&str>) -> String {
         if let Some(marker) = morph_marker {
             format!("{}{}", b, marker)
         } else {
@@ -114,11 +114,11 @@ impl LangInterpretor for French {
         format!("{},{}", int, dec)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<String> {
+    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         if word.ends_with("ème") {
-            Some("ème".to_owned())
+            Some("ème")
         } else if word.ends_with("èmes") {
-            Some("èmes".to_owned())
+            Some("èmes")
         } else {
             None
         }
