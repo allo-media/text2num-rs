@@ -7,7 +7,6 @@ pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,
-    morph_marker: Option<&'static str>,
     lang: &'a T,
 }
 
@@ -17,54 +16,33 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
             int_part: DigitString::new(),
             dec_part: DigitString::new(),
             is_dec: false,
-            morph_marker: None,
             lang,
         }
     }
 
     pub fn push(&mut self, word: &str) -> Result<(), Error> {
-        let (status, marker) = if word.contains('-') {
-            // it's a group. It should succeed as a whole, or not at all (transactional)
-            let mut group = DigitString::new();
-            match apply_group(word.split('-'), &mut group, self.lang) {
-                Ok(marker) => {
-                    let status = if self.is_dec {
-                        self.dec_part.put(&group)
-                    } else {
-                        self.int_part.put(&group)
-                    };
-                    (status, marker)
-                }
-                Err(err) => (Err(err), None),
-            }
+        let status = if self.is_dec {
+            self.lang.apply(word, &mut self.dec_part)
         } else {
-            let status = if self.is_dec {
-                self.lang.apply(word, &mut self.dec_part)
-            } else {
-                self.lang.apply(word, &mut self.int_part)
-            };
-            (status, self.lang.get_morph_marker(word))
+            self.lang.apply(word, &mut self.int_part)
         };
         if status.is_err() && !self.is_dec && self.lang.is_decimal_sep(word) {
             self.is_dec = true;
             Err(Error::Incomplete)
         } else {
-            if status.is_ok() && self.morph_marker.is_none() {
-                self.morph_marker = marker;
-            }
             status
         }
     }
 
     pub fn into_string_and_value(self) -> (String, f64) {
-        let int_part = self.int_part.into_string();
         if self.is_dec {
+            let int_part = self.int_part.into_string();
             let dec_part = self.dec_part.into_string();
             let value: f64 = format!("{}.{}", &int_part, &dec_part).parse().unwrap();
             (self.lang.format_decimal(int_part, dec_part), value)
         } else {
-            let value: f64 = int_part.parse().unwrap();
-            (self.lang.format(int_part, self.morph_marker), value)
+            let value: f64 = self.int_part.value();
+            (self.lang.format(self.int_part), value)
         }
     }
 
@@ -73,44 +51,15 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
     }
 
     pub fn is_ordinal(&self) -> bool {
-        self.morph_marker.is_some()
-    }
-}
-
-fn apply_group<'a, I: Iterator<Item = &'a str>, T: LangInterpretor>(
-    group: I,
-    b: &mut DigitString,
-    lang: &T,
-) -> Result<Option<&'static str>, Error> {
-    let mut incomplete: bool = false;
-    let mut marker: Option<&'static str> = None;
-    for token in group {
-        incomplete = match lang.apply(token, b) {
-            Err(Error::Incomplete) => true,
-            Ok(()) => false,
-            Err(error) => return Err(error),
-        };
-        if marker.is_none() {
-            marker = lang.get_morph_marker(token);
-        }
-    }
-    if incomplete {
-        Err(Error::Incomplete)
-    } else {
-        Ok(marker)
+        self.int_part.is_ordinal()
     }
 }
 
 /// Interpret the `text` as a integer number or ordinal, and translate it into digits.
 /// Return an error if the text couldn't be undestood as a correct number.
 pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
-    let mut builder = DigitString::new();
-    match apply_group(
-        text.split_whitespace().map(|w| w.split('-')).flatten(),
-        &mut builder,
-        lang,
-    ) {
-        Ok(marker) => Ok(lang.format(builder.into_string(), marker)),
+    match lang.exec_group(text.split_whitespace()) {
+        Ok(ds) => Ok(lang.format(ds)),
         Err(err) => Err(err),
     }
 }

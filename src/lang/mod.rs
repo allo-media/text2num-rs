@@ -10,9 +10,26 @@ pub trait LangInterpretor {
     /// Return ordinal morphological marker suitable for digits if any marker is present on text
     fn get_morph_marker(&self, word: &str) -> Option<&'static str>;
     fn is_decimal_sep(&self, word: &str) -> bool;
-    fn format(&self, b: String, morph_marker: Option<&str>) -> String;
+    fn format(&self, b: DigitString) -> String;
     fn format_decimal(&self, int: String, dec: String) -> String;
     fn is_insignificant(&self, word: &str) -> bool;
+    /// Process group as all or nothing
+    fn exec_group<'a, I: Iterator<Item = &'a str>>(&self, group: I) -> Result<DigitString, Error> {
+        let mut b = DigitString::new();
+        let mut incomplete: bool = false;
+        for token in group {
+            incomplete = match self.apply(token, &mut b) {
+                Err(Error::Incomplete) => true,
+                Ok(()) => false,
+                Err(error) => return Err(error),
+            };
+        }
+        if incomplete {
+            Err(Error::Incomplete)
+        } else {
+            Ok(b)
+        }
+    }
 }
 
 pub enum Language {
@@ -58,10 +75,10 @@ macro_rules! delegate {
                 )*
             }
         }
-        fn format(&self, b: String, morph_marker: Option<&str>) -> String{
+        fn format(&self, b: DigitString) -> String{
             match self{
                 $(
-                    Language::$variant(l) => l.format(b, morph_marker),
+                    Language::$variant(l) => l.format(b),
                 )*
             }
         }

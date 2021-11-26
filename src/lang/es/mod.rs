@@ -21,6 +21,10 @@ pub struct Spanish {}
 
 impl LangInterpretor for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
+        let num_marker = self.get_morph_marker(num_func);
+        if !b.is_empty() && num_marker != b.ordinal_marker {
+            return Err(Error::Overlap);
+        }
         let status = match lemmatize(num_func) {
             "cero" => b.put(b"0"),
             "un" | "uno" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
@@ -85,6 +89,9 @@ impl LangInterpretor for Spanish {
 
             _ => Err(Error::NaN),
         };
+        if status.is_ok() {
+            b.ordinal_marker = num_marker;
+        }
         status
     }
 
@@ -92,11 +99,11 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format(&self, b: String, morph_marker: Option<&str>) -> String {
-        if let Some(marker) = morph_marker {
-            format!("{}{}", b, marker)
+    fn format(&self, b: DigitString) -> String {
+        if let Some(marker) = b.ordinal_marker {
+            format!("{}{}", b.into_string(), marker)
         } else {
-            b
+            b.into_string()
         }
     }
 
@@ -106,13 +113,15 @@ impl LangInterpretor for Spanish {
 
     fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         let sing = lemmatize(word).trim_start_matches("decimo");
+        let is_plur = word.ends_with('s');
         match sing {
+            "primer" => Some(".ᵉʳ"),
             "primero" | "segundo" | "tercero" | "cuarto" | "quinto" | "sexto" | "séptimo"
-            | "octavo" | "ctavo" | "noveno" => Some("º"),
+            | "octavo" | "ctavo" | "noveno" => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
             "primera" | "segunda" | "tercera" | "cuarta" | "quinta" | "sexta" | "séptima"
-            | "octava" | "ctava" | "novena" => Some("ª"),
-            ord if ord.ends_with("imo") => Some("º"),
-            ord if ord.ends_with("ima") => Some("ª"),
+            | "octava" | "ctava" | "novena" => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
+            ord if ord.ends_with("imo") => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
+            ord if ord.ends_with("ima") => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
             _ => None,
         }
     }
@@ -221,21 +230,21 @@ mod tests {
     fn test_variants() {
         assert_text2digits!("un millon", "1000000");
         assert_text2digits!("un millón", "1000000");
-        assert_text2digits!("décimo primero", "11º");
-        assert_text2digits!("decimoprimero", "11º");
-        assert_text2digits!("undécimo", "11º");
-        assert_text2digits!("décimo segundo", "12º");
-        assert_text2digits!("decimosegundo", "12º");
-        assert_text2digits!("duodécimo", "12º");
+        assert_text2digits!("décimo primero", "11.º");
+        assert_text2digits!("decimoprimero", "11.º");
+        assert_text2digits!("undécimo", "11.º");
+        assert_text2digits!("décimo segundo", "12.º");
+        assert_text2digits!("decimosegundo", "12.º");
+        assert_text2digits!("duodécimo", "12.º");
     }
 
     #[test]
     fn test_ordinals() {
-        assert_text2digits!("vigésimo cuarto", "24º");
-        assert_text2digits!("vigésimo primero", "21º");
-        assert_text2digits!("decimosexta", "16ª");
-        assert_text2digits!("decimosextas", "16ª");
-        assert_text2digits!("decimosextos", "16º");
+        assert_text2digits!("vigésimo cuarto", "24.º");
+        assert_text2digits!("vigésimo primero", "21.º");
+        assert_text2digits!("decimosexta", "16.ª");
+        assert_text2digits!("decimosextas", "16.ᵃˢ");
+        assert_text2digits!("decimosextos", "16.ᵒˢ");
     }
 
     #[test]
@@ -311,22 +320,22 @@ mod tests {
     fn test_replace_numbers_ordinals() {
         assert_replace_numbers!(
             "Quinto segundo tercero vigésimo primero centésimo milésimo ducentésimo trigésimo.",
-            "5º 2º 3º 21º 100230º."
+            "5.º 2.º 3.º 21.º 100230.º."
         );
         assert_replace_numbers!(
             "Quinto tercero segundo vigésimo primero centésimo.",
-            "5º 3º 2º 21º 100º."
+            "5.º 3.º 2.º 21.º 100.º."
         );
-        assert_replace_numbers!("centésimo trigésimo segundo", "132º");
-        assert_replace_numbers!("centésimo, trigésimo, segundo", "100º, 30º, 2º");
+        assert_replace_numbers!("centésimo trigésimo segundo", "132.º");
+        assert_replace_numbers!("centésimo, trigésimo, segundo", "100.º, 30.º, 2.º");
         assert_replace_numbers!(
             "Un segundo por favor! Vigésimo segundo es diferente que veinte segundos.",
-            "Un segundo por favor! 22º es diferente que 20 segundos."
+            "Un segundo por favor! 22.º es diferente que 20 segundos."
         );
-        assert_replace_numbers!("Él ha quedado tercero", "Él ha quedado 3º");
-        assert_replace_numbers!("Ella ha quedado tercera", "Ella ha quedado 3ª");
-        assert_replace_numbers!("Ellos han quedado terceros", "Ellos han quedado 3º");
-        assert_replace_numbers!("Ellas han quedado terceras", "Ellas han quedado 3ª");
+        assert_replace_numbers!("Él ha quedado tercero", "Él ha quedado 3.º");
+        assert_replace_numbers!("Ella ha quedado tercera", "Ella ha quedado 3.ª");
+        assert_replace_numbers!("Ellos han quedado terceros", "Ellos han quedado 3.º");
+        assert_replace_numbers!("Ellas han quedado terceras", "Ellas han quedado 3.ª");
     }
 
     #[test]

@@ -11,6 +11,7 @@ pub struct DigitString {
     buffer: Vec<u8>,
     leading_zeroes: usize,
     frozen: bool,
+    pub ordinal_marker: Option<&'static str>,
 }
 
 fn all_zeros(slice: &[u8]) -> bool {
@@ -23,6 +24,7 @@ impl DigitString {
             buffer: Vec::with_capacity(4),
             leading_zeroes: 0,
             frozen: false,
+            ordinal_marker: None,
         }
     }
 
@@ -133,12 +135,27 @@ impl DigitString {
         }
     }
 
-    /// Formal decimal string representation with leading zeroes
+    /// Formal base 10 string representation with leading zeroes
     pub fn into_string(self) -> String {
         // we know that the string is valid.
         let mut res = "0".repeat(self.leading_zeroes);
         res.push_str(&String::from_utf8(self.buffer).unwrap());
         res
+    }
+
+    pub fn value(&self) -> f64 {
+        if self.buffer.is_empty() && self.leading_zeroes > 0 {
+            return 0.0;
+        }
+        // it's safe to unwrap since we are sure to have a valid number string
+        std::str::from_utf8(self.buffer.as_slice())
+            .unwrap()
+            .parse()
+            .unwrap()
+    }
+
+    pub fn is_ordinal(&self) -> bool {
+        self.ordinal_marker.is_some()
     }
 }
 
