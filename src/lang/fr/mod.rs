@@ -361,8 +361,8 @@ mod tests {
     #[test]
     fn test_isolates_with_noise() {
         assert_replace_numbers!(
-            "alors deux et trois plus cinq euh six puis sept et encore huit mois quatre c'est bien trois",
-            "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 mois 4 c'est bien 3"
+            "alors deux et trois plus cinq euh six puis sept et encore huit moins quatre c'est bien trois",
+            "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 moins 4 c'est bien 3"
         );
     }
 }

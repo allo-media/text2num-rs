@@ -30,7 +30,8 @@ impl LangInterpretor for Spanish {
             "un" | "uno" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
             "primer" | "primero" | "primera" => b.put(b"1"),
             "dos" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"2"),
-            "segundo" | "segunda" => b.put(b"2"),
+            "segundo" if b.ordinal_marker.is_some() => b.put(b"2"),
+            "segunda" => b.put(b"2"),
             "tres" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"3"),
             "tercer" | "tercero" | "tercera" => b.put(b"3"),
             "cuatro" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"4"),
@@ -319,23 +320,23 @@ mod tests {
     #[test]
     fn test_replace_numbers_ordinals() {
         assert_replace_numbers!(
-            "Quinto segundo tercero vigésimo primero centésimo milésimo ducentésimo trigésimo.",
-            "5.º 2.º 3.º 21.º 100230.º."
-        );
-        assert_replace_numbers!(
-            "Quinto tercero segundo vigésimo primero centésimo.",
-            "5.º 3.º 2.º 21.º 100.º."
+            "Cuarto quinto segundo tercero vigésimo primero centésimo milésimo ducentésimo trigésimo.",
+            "4.º 5.º segundo 3.º 21.º 100230.º."
         );
         assert_replace_numbers!("centésimo trigésimo segundo", "132.º");
-        assert_replace_numbers!("centésimo, trigésimo, segundo", "100.º, 30.º, 2.º");
+        assert_replace_numbers!("centésimo, trigésimo, segundo", "100.º, 30.º, segundo");
         assert_replace_numbers!(
             "Un segundo por favor! Vigésimo segundo es diferente que veinte segundos.",
             "Un segundo por favor! 22.º es diferente que 20 segundos."
         );
-        assert_replace_numbers!("Él ha quedado tercero", "Él ha quedado 3.º");
-        assert_replace_numbers!("Ella ha quedado tercera", "Ella ha quedado 3.ª");
-        assert_replace_numbers!("Ellos han quedado terceros", "Ellos han quedado 3.º");
-        assert_replace_numbers!("Ellas han quedado terceras", "Ellas han quedado 3.ª");
+        assert_replace_numbers!(
+            "Un segundo por favor! Vigésimos segundos es diferente que veinte segundos.",
+            "Un segundo por favor! 22.ᵒˢ es diferente que 20 segundos."
+        );
+        assert_replace_all_numbers!("Él ha quedado tercero", "Él ha quedado 3.º");
+        assert_replace_all_numbers!("Ella ha quedado tercera", "Ella ha quedado 3.ª");
+        assert_replace_all_numbers!("Ellos han quedado terceros", "Ellos han quedado 3.ᵒˢ");
+        assert_replace_all_numbers!("Ellas han quedado terceras", "Ellas han quedado 3.ᵃˢ");
     }
 
     #[test]
@@ -357,22 +358,13 @@ mod tests {
             "Un momento por favor! 31 gatos. 1 2 3 4!"
         );
         assert_replace_numbers!("Ni uno. Uno uno. Treinta y uno", "Ni uno. 1 1. 31");
-        // assert_replace_numbers!(
-        //     "Mon premier arrive avant mon deuxième et mon troisième",
-        //     "Mon premier arrive avant mon deuxième et mon troisième"
-        // );
-        // assert_replace_all_numbers!(
-        //     "Mon premier arrive avant mon deuxième et mon troisième",
-        //     "Mon premier arrive avant mon 2ème et mon 3ème"
-        // );
-        // assert_replace_numbers!("Premier, deuxième, troisième", "Premier, 2ème, 3ème");
     }
 
-    // #[test]
-    // fn test_isolates_with_noise() {
-    //     assert_replace_numbers!(
-    //         "alors deux et trois plus cinq euh six puis sept et encore huit mois quatre c'est bien trois",
-    //         "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 mois 4 c'est bien 3"
-    //     );
-    // }
+    #[test]
+    fn test_isolates_with_noise() {
+        assert_replace_numbers!(
+            "Entonces dos con tres con siete y ocho mas cuatro menos cinco son nueve exacto",
+            "Entonces 2 con 3 con 7 y 8 mas 4 menos 5 son 9 exacto"
+        );
+    }
 }

@@ -1,5 +1,5 @@
 use phf::{phf_set, Set};
 
 pub static INSIGNIFICANT: Set<&'static str> = phf_set! {
-    "alors", "bien", "c'est", "encore", "ensuite", "y", "euh", "heu", "ha", "ah", "hu", "hum", "moins", "ok", "oui", "plus", "puis", "voilà"
+    "pues", "y", "digo", "o", "sea", "entonces", "así", "que", "bueno", "es", "eso", "en", "fin", "luego", "mas", "menos", "pero", "vale", "eh", "ah", "oye", "ya", "hum", "ok", "sí", "no", "con", "son"
 };
