@@ -167,6 +167,12 @@ impl Deref for DigitString {
     }
 }
 
+impl Default for DigitString {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -146,7 +146,7 @@ impl NumTracker {
         self.matches.push(Occurence {
             start: self.match_start,
             end: self.match_end,
-            text: digits.into(),
+            text: digits,
             is_ordinal,
             value,
         });
