@@ -19,7 +19,22 @@ pub struct French {}
 
 impl LangInterpretor for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
-        let status = match lemmatize(num_func) {
+        // In French, numbers can be compounded to form a group with "-"
+        if num_func.contains('-') {
+            return match self.exec_group(num_func.split('-')) {
+                Ok(ds) => {
+                    b.put(&ds)?;
+                    if ds.ordinal_marker.is_some() {
+                        b.ordinal_marker = ds.ordinal_marker;
+                        b.freeze()
+                    }
+                    Ok(())
+                }
+                Err(err) => Err(err),
+            };
+        }
+        let lemma = lemmatize(num_func);
+        let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
             "un" | "unième" if b.peek(2) != b"10" => b.put(b"1"),
             "deux" | "deuxième" if b.peek(2) != b"10" => b.put(b"2"),
@@ -92,7 +107,8 @@ impl LangInterpretor for French {
 
             _ => Err(Error::NaN),
         };
-        if status.is_ok() && num_func.ends_with("ème") {
+        if status.is_ok() && lemma.ends_with("ème") {
+            b.ordinal_marker = self.get_morph_marker(num_func);
             b.freeze();
         }
         status
@@ -102,11 +118,11 @@ impl LangInterpretor for French {
         word == "virgule"
     }
 
-    fn format(&self, b: String, morph_marker: Option<String>) -> String {
-        if let Some(marker) = morph_marker {
-            format!("{}{}", b, marker)
+    fn format(&self, b: DigitString) -> String {
+        if let Some(marker) = b.ordinal_marker {
+            format!("{}{}", b.into_string(), marker)
         } else {
-            b
+            b.into_string()
         }
     }
 
@@ -114,11 +130,11 @@ impl LangInterpretor for French {
         format!("{},{}", int, dec)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<String> {
+    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         if word.ends_with("ème") {
-            Some("ème".to_owned())
+            Some("ème")
         } else if word.ends_with("èmes") {
-            Some("èmes".to_owned())
+            Some("èmes")
         } else {
             None
         }
@@ -199,7 +215,7 @@ mod tests {
     #[test]
     fn test_apply_variants() {
         assert_text2digits!("quatre vingt dix huit", "98");
-        assert_text2digits!("quatre-vingt dix-huit", "98");
+        assert_text2digits!("quatre-vingt-dix-huit", "98");
         assert_text2digits!("nonante huit", "98");
         assert_text2digits!("nonante-huit", "98");
         assert_text2digits!("soixante dix huit", "78");
@@ -250,6 +266,7 @@ mod tests {
         assert_invalid!("dix unième");
         assert_invalid!("vingtième cinq");
         assert_invalid!("zéro zéro trente quatre vingt");
+        assert_invalid!("quatre-vingt dix-huit");
     }
 
     #[test]
@@ -344,8 +361,8 @@ mod tests {
     #[test]
     fn test_isolates_with_noise() {
         assert_replace_numbers!(
-            "alors deux et trois plus cinq euh six puis sept et encore huit mois quatre c'est bien trois",
-            "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 mois 4 c'est bien 3"
+            "alors deux et trois plus cinq euh six puis sept et encore huit moins quatre c'est bien trois",
+            "alors 2 et 3 plus 5 euh 6 puis 7 et encore 8 moins 4 c'est bien 3"
         );
     }
 }

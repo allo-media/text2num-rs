@@ -19,8 +19,23 @@ pub struct English {}
 
 impl LangInterpretor for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
-        let status = match lemmatize(num_func) {
-            "zero" | "o" => b.put(b"0"),
+        // In French, numbers can be compounded to form a group with "-"
+        if num_func.contains('-') {
+            return match self.exec_group(num_func.split('-')) {
+                Ok(ds) => {
+                    b.put(&ds)?;
+                    if ds.ordinal_marker.is_some() {
+                        b.ordinal_marker = ds.ordinal_marker;
+                        b.freeze()
+                    }
+                    Ok(())
+                }
+                Err(err) => Err(err),
+            };
+        }
+        let lemma = lemmatize(num_func);
+        let status = match lemmatize(lemma) {
+            "zero" | "o" | "nought" => b.put(b"0"),
             "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
             "two" | "second" if b.peek(2) != b"10" => b.put(b"2"),
             "three" | "third" if b.peek(2) != b"10" => b.put(b"3"),
@@ -64,11 +79,12 @@ impl LangInterpretor for English {
             _ => Err(Error::NaN),
         };
         if status.is_ok()
-            && (num_func.ends_with("th")
+            && (lemma.ends_with("th")
                 || num_func == "first"
                 || num_func == "second"
-                || num_func == "third")
+                || lemma == "third")
         {
+            b.ordinal_marker = self.get_morph_marker(num_func);
             b.freeze();
         }
         status
@@ -78,11 +94,11 @@ impl LangInterpretor for English {
         word == "point"
     }
 
-    fn format(&self, b: String, morph_marker: Option<String>) -> String {
-        if let Some(marker) = morph_marker {
-            format!("{}{}", b, marker)
+    fn format(&self, b: DigitString) -> String {
+        if let Some(marker) = b.ordinal_marker {
+            format!("{}{}", b.into_string(), marker)
         } else {
-            b
+            b.into_string()
         }
     }
 
@@ -90,17 +106,17 @@ impl LangInterpretor for English {
         format!("{}.{}", int, dec)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<String> {
+    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
         if word.ends_with("th") {
-            Some("th".to_owned())
+            Some("th")
         } else if word.ends_with("ths") {
-            Some("ths".to_owned())
+            Some("ths")
         } else {
             match word {
-                "first" => Some("st".to_owned()),
-                "second" => Some("nd".to_owned()),
-                "third" => Some("rd".to_owned()),
-                "thirds" => Some("rds".to_owned()),
+                "first" => Some("st"),
+                "second" => Some("nd"),
+                "third" => Some("rd"),
+                "thirds" => Some("rds"),
                 _ => None,
             }
         }
