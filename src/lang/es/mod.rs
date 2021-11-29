@@ -3,7 +3,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::LangInterpretor;
+use super::{LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -22,7 +22,7 @@ pub struct Spanish {}
 impl LangInterpretor for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
-        if !b.is_empty() && num_marker != b.ordinal_marker && num_marker != Some("avo") {
+        if !b.is_empty() && num_marker != b.marker && !num_marker.is_fraction() {
             return Err(Error::Overlap);
         }
         let status = match lemmatize(num_func) {
@@ -30,7 +30,7 @@ impl LangInterpretor for Spanish {
             "un" | "uno" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
             "primer" | "primero" | "primera" => b.put(b"1"),
             "dos" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"2"),
-            "segundo" if b.ordinal_marker.is_some() => b.put(b"2"),
+            "segundo" if b.marker.is_ordinal() => b.put(b"2"),
             "segunda" => b.put(b"2"),
             "tres" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"3"),
             "tercer" | "tercero" | "tercera" => b.put(b"3"),
@@ -95,8 +95,8 @@ impl LangInterpretor for Spanish {
             _ => Err(Error::NaN),
         };
         if status.is_ok() {
-            b.ordinal_marker = num_marker;
-            if num_marker == Some("avo") {
+            b.marker = num_marker;
+            if b.marker.is_fraction() {
                 b.freeze()
             }
         }
@@ -111,35 +111,44 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format(&self, b: DigitString) -> String {
-        if let Some(marker) = b.ordinal_marker {
-            if marker == "avo" {
-                format!("1/{}", b.into_string())
-            } else {
-                format!("{}{}", b.into_string(), marker)
-            }
-        } else {
-            b.into_string()
+    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+        let repr = b.to_string();
+        let val: f64 = repr.parse().unwrap();
+        match b.marker {
+            MorphologicalMarker::Fraction(_) => (format!("1/{}", repr), val.recip()),
+            MorphologicalMarker::Ordinal(marker) => (format!("{}{}", repr, marker), val),
+            MorphologicalMarker::None => (repr, val),
         }
     }
 
-    fn format_decimal(&self, int: String, dec: String) -> String {
-        format!("{},{}", int, dec)
+    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+        let sint = int.to_string();
+        let sdec = dec.to_string();
+        let val = format!("{}.{}", sint, sdec).parse().unwrap();
+        (format!("{},{}", sint, sdec), val)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
+    fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
         let sing = lemmatize(word).trim_start_matches("decimo");
         let is_plur = word.ends_with('s');
         match sing {
-            "primer" => Some(".ᵉʳ"),
+            "primer" => MorphologicalMarker::Ordinal(".ᵉʳ"),
             "primero" | "segundo" | "tercero" | "cuarto" | "quinto" | "sexto" | "séptimo"
-            | "octavo" | "ctavo" | "noveno" => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
+            | "octavo" | "ctavo" | "noveno" => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+            }
             "primera" | "segunda" | "tercera" | "cuarta" | "quinta" | "sexta" | "séptima"
-            | "octava" | "ctava" | "novena" => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
-            ord if ord.ends_with("imo") => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
-            ord if ord.ends_with("ima") => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
-            ord if ord.ends_with("avo") => Some("avo"),
-            _ => None,
+            | "octava" | "ctava" | "novena" => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+            }
+            ord if ord.ends_with("imo") => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+            }
+            ord if ord.ends_with("ima") => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+            }
+            ord if ord.ends_with("avo") => MorphologicalMarker::Fraction("avo"),
+            _ => MorphologicalMarker::None,
         }
     }
 

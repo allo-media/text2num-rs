@@ -36,13 +36,10 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 
     pub fn into_string_and_value(self) -> (String, f64) {
         if self.is_dec {
-            let int_part = self.int_part.into_string();
-            let dec_part = self.dec_part.into_string();
-            let value: f64 = format!("{}.{}", &int_part, &dec_part).parse().unwrap();
-            (self.lang.format_decimal(int_part, dec_part), value)
+            self.lang
+                .format_decimal_and_value(self.int_part, self.dec_part)
         } else {
-            let value: f64 = self.int_part.value();
-            (self.lang.format(self.int_part), value)
+            self.lang.format_and_value(self.int_part)
         }
     }
 
@@ -59,7 +56,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 /// Return an error if the text couldn't be undestood as a correct number.
 pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
     match lang.exec_group(text.split_whitespace()) {
-        Ok(ds) => Ok(lang.format(ds)),
+        Ok(ds) => Ok(lang.format_and_value(ds).0),
         Err(err) => Err(err),
     }
 }
