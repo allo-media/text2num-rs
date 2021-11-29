@@ -19,7 +19,7 @@ pub struct English {}
 
 impl LangInterpretor for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
-        // In French, numbers can be compounded to form a group with "-"
+        // In English, numbers can be compounded to form a group with "-"
         if num_func.contains('-') {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
@@ -88,6 +88,22 @@ impl LangInterpretor for English {
             b.freeze();
         }
         status
+    }
+
+    fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
+        match decimal_func {
+            "zero" | "o" | "nought" => b.push(b"0"),
+            "one" => b.push(b"1"),
+            "two" => b.push(b"2"),
+            "three" => b.push(b"3"),
+            "four" => b.push(b"4"),
+            "five" => b.push(b"5"),
+            "six" => b.push(b"6"),
+            "seven" => b.push(b"7"),
+            "eight" => b.push(b"8"),
+            "nine" => b.push(b"9"),
+            _ => Err(Error::NaN),
+        }
     }
 
     fn is_decimal_sep(&self, word: &str) -> bool {
@@ -297,9 +313,9 @@ mod tests {
     #[test]
     fn test_replace_decimals() {
         assert_replace_numbers!(
-            "twelve point ninety-nine, one hundred twenty point zero five, \
-            one hundred twenty point o five, one point two hundred thirty-six.",
-            "12.99, 120.05, 120.05, 1.236."
+            "twelve point nine nine, one hundred twenty point zero five, \
+            one hundred twenty point o five, one point two hundred thirty-six, one point two three six.",
+            "12.99, 120.05, 120.05, 1.2 136, 1.236."
         );
     }
 

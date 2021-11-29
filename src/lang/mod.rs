@@ -5,8 +5,10 @@ mod fr;
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
+/// You should never mix calls to `apply` and `apply_decimal` on the same DigitString.
 pub trait LangInterpretor {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error>;
+    fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error>;
     /// Return ordinal morphological marker suitable for digits if any marker is present on text
     fn get_morph_marker(&self, word: &str) -> Option<&'static str>;
     fn is_decimal_sep(&self, word: &str) -> bool;
@@ -61,6 +63,15 @@ macro_rules! delegate {
                 )*
             }
         }
+
+        fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
+            match self {
+                $(
+                    Language::$variant(l) => l.apply_decimal(decimal_func, b),
+                )*
+            }
+        }
+
         fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
             match self {
                 $(

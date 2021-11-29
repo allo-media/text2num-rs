@@ -96,6 +96,10 @@ impl LangInterpretor for Spanish {
         status
     }
 
+    fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
+        self.apply(decimal_func, b)
+    }
+
     fn is_decimal_sep(&self, word: &str) -> bool {
         word == "coma"
     }

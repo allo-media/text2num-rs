@@ -114,6 +114,10 @@ impl LangInterpretor for French {
         status
     }
 
+    fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
+        self.apply(decimal_func, b)
+    }
+
     fn is_decimal_sep(&self, word: &str) -> bool {
         word == "virgule"
     }
@@ -325,8 +329,8 @@ mod tests {
     #[test]
     fn test_replace_numbers_decimals() {
         assert_replace_numbers!(
-            "Douze virgule quatre-vingt-dix-neuf, cent vingt virgule zéro cinq, un virgule deux cent trente six.",
-            "12,99, 120,05, 1,236."
+            "Douze virgule quatre-vingt-dix-neuf, cent vingt virgule zéro cinq, un virgule deux cent trente six, un virgule deux trois six.",
+            "12,99, 120,05, 1,236, 1,2 3 6."
         );
         assert_replace_numbers!("zéro virgule cent douze", "0,112");
     }
