@@ -22,7 +22,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 
     pub fn push(&mut self, word: &str) -> Result<(), Error> {
         let status = if self.is_dec {
-            self.lang.apply(word, &mut self.dec_part)
+            self.lang.apply_decimal(word, &mut self.dec_part)
         } else {
             self.lang.apply(word, &mut self.int_part)
         };

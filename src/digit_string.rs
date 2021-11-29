@@ -65,6 +65,11 @@ impl DigitString {
         }
     }
 
+    pub fn push(&mut self, digits: &[u8]) -> Result<(), Error> {
+        self.buffer.extend_from_slice(digits);
+        Ok(())
+    }
+
     /// Force put (never fail, unless dstring is frozen)
     pub fn fput(&mut self, digits: &[u8]) -> Result<(), Error> {
         if self.frozen {
