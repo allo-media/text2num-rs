@@ -22,7 +22,7 @@ pub struct Spanish {}
 impl LangInterpretor for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
-        if !b.is_empty() && num_marker != b.ordinal_marker {
+        if !b.is_empty() && num_marker != b.ordinal_marker && num_marker != Some("avo") {
             return Err(Error::Overlap);
         }
         let status = match lemmatize(num_func) {
@@ -47,35 +47,39 @@ impl LangInterpretor for Spanish {
             "nueve" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"9"),
             "noveno" | "novena" => b.put(b"9"),
             "diez" | "décimo" | "décima" => b.put(b"10"),
-            "once" | "undécimo" | "undécima" | "decimoprimero" | "decimoprimera" => b.put(b"11"),
-            "doce" | "duodécimo" | "duodécima" | "decimosegundo" | "decimosegunda" => {
+            "once" | "undécimo" | "undécima" | "decimoprimero" | "decimoprimera" | "onceavo" => {
+                b.put(b"11")
+            }
+            "doce" | "duodécimo" | "duodécima" | "decimosegundo" | "decimosegunda" | "doceavo" => {
                 b.put(b"12")
             }
-            "trece" | "decimotercero" | "decimotercera" => b.put(b"13"),
-            "catorce" | "decimocuarto" | "decimocuarta" => b.put(b"14"),
-            "quince" | "decimoquinto" | "decimoquinta" => b.put(b"15"),
-            "dieciseis" | "dieciséis" | "decimosexto" | "decimosexta" => b.put(b"16"),
-            "diecisiete" | "decimoséptimo" | "decimoséptima" => b.put(b"17"),
-            "dieciocho" | "decimoctavo" | "decimoctava" => b.put(b"18"),
-            "diecinueve" | "decimonoveno" | "decimonovena" => b.put(b"19"),
-            "veinte" | "vigésimo" | "vigésima" => b.put(b"20"),
-            "veintiuno" => b.put(b"21"),
-            "veintidós" | "veintidos" => b.put(b"22"),
-            "veintitrés" | "veintitres" => b.put(b"23"),
-            "veinticuatro" => b.put(b"24"),
-            "veinticinco" => b.put(b"25"),
-            "veintiseis" | "veintiséis" => b.put(b"26"),
-            "veintisiete" => b.put(b"27"),
-            "veintiocho" => b.put(b"28"),
-            "veintinueve" => b.put(b"29"),
-            "treinta" | "trigésimo" | "trigésima" => b.put(b"30"),
-            "cuarenta" | "cuadragésimo" | "cuadragésima" => b.put(b"40"),
-            "cincuenta" | "quincuagésimo" | "quincuagésima" => b.put(b"50"),
-            "sesenta" | "sexagésimo" | "sexagésima" => b.put(b"60"),
-            "setenta" | "septuagésimo" | "septuagésima" => b.put(b"70"),
-            "ochenta" | "octogésimo" | "octogésima" => b.put(b"80"),
-            "noventa" | "nonagésimo" | "nonagésima" => b.put(b"90"),
-            "cien" | "ciento" | "centésimo" | "centésima" => b.put(b"100"),
+            "trece" | "decimotercero" | "decimotercera" | "treceavo" => b.put(b"13"),
+            "catorce" | "decimocuarto" | "decimocuarta" | "catorceavo" => b.put(b"14"),
+            "quince" | "decimoquinto" | "decimoquinta" | "quinceavo" => b.put(b"15"),
+            "dieciseis" | "dieciséis" | "decimosexto" | "decimosexta" | "deciseisavo" => {
+                b.put(b"16")
+            }
+            "diecisiete" | "decimoséptimo" | "decimoséptima" | "diecisieteavo" => b.put(b"17"),
+            "dieciocho" | "decimoctavo" | "decimoctava" | "dieciochoavo" => b.put(b"18"),
+            "diecinueve" | "decimonoveno" | "decimonovena" | "decinueveavo" => b.put(b"19"),
+            "veinte" | "vigésimo" | "vigésima" | "veintavo" | "veinteavo" => b.put(b"20"),
+            "veintiuno" | "veintiunoavo" => b.put(b"21"),
+            "veintidós" | "veintidos" | "veintidosavo" => b.put(b"22"),
+            "veintitrés" | "veintitres" | "veintitresavo" => b.put(b"23"),
+            "veinticuatro" | "veinticuatroavo" => b.put(b"24"),
+            "veinticinco" | "veinticincoavo" => b.put(b"25"),
+            "veintiseis" | "veintiséis" | "veintiseisavo" => b.put(b"26"),
+            "veintisiete" | "veintisieteavo" => b.put(b"27"),
+            "veintiocho" | "veintiochoavo" => b.put(b"28"),
+            "veintinueve" | "veintinueveavo" => b.put(b"29"),
+            "treinta" | "trigésimo" | "trigésima" | "treintavo" => b.put(b"30"),
+            "cuarenta" | "cuadragésimo" | "cuadragésima" | "cuarentavo" => b.put(b"40"),
+            "cincuenta" | "quincuagésimo" | "quincuagésima" | "cincuentavo" => b.put(b"50"),
+            "sesenta" | "sexagésimo" | "sexagésima" | "sesentavo" => b.put(b"60"),
+            "setenta" | "septuagésimo" | "septuagésima" | "setentavo" => b.put(b"70"),
+            "ochenta" | "octogésimo" | "octogésima" | "ochentavo" => b.put(b"80"),
+            "noventa" | "nonagésimo" | "nonagésima" | "noventavo" => b.put(b"90"),
+            "cien" | "ciento" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
             "dosciento" | "ducentésimo" | "ducentésima" => b.put(b"200"),
             "tresciento" | "tricentésimo" | "tricentésima" => b.put(b"300"),
             "cuatrociento" | "quadringentésimo" | "quadringentésima" => b.put(b"400"),
@@ -92,6 +96,9 @@ impl LangInterpretor for Spanish {
         };
         if status.is_ok() {
             b.ordinal_marker = num_marker;
+            if num_marker == Some("avo") {
+                b.freeze()
+            }
         }
         status
     }
@@ -106,7 +113,11 @@ impl LangInterpretor for Spanish {
 
     fn format(&self, b: DigitString) -> String {
         if let Some(marker) = b.ordinal_marker {
-            format!("{}{}", b.into_string(), marker)
+            if marker == "avo" {
+                format!("1/{}", b.into_string())
+            } else {
+                format!("{}{}", b.into_string(), marker)
+            }
         } else {
             b.into_string()
         }
@@ -127,6 +138,7 @@ impl LangInterpretor for Spanish {
             | "octava" | "ctava" | "novena" => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
             ord if ord.ends_with("imo") => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
             ord if ord.ends_with("ima") => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
+            ord if ord.ends_with("avo") => Some("avo"),
             _ => None,
         }
     }
@@ -254,11 +266,9 @@ mod tests {
 
     #[test]
     fn test_fractions() {
-        // TODO: coudn't find what the abbreviation is
-        // assert_text2digits!("doceavo", "12");
-        // assert_text2digits!("doceava", "12");
-        // assert_text2digits!("centésimo", "100");
-        // assert_text2digits!("ciento veintiochoavos", "128");
+        assert_text2digits!("doceavo", "1/12");
+        assert_text2digits!("centavo", "1/100");
+        assert_text2digits!("ciento veintiochoavos", "1/128");
     }
 
     #[test]
