@@ -3,7 +3,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::LangInterpretor;
+use super::{LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -22,7 +22,7 @@ pub struct Spanish {}
 impl LangInterpretor for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
-        if !b.is_empty() && num_marker != b.ordinal_marker {
+        if !b.is_empty() && num_marker != b.marker && !num_marker.is_fraction() {
             return Err(Error::Overlap);
         }
         let status = match lemmatize(num_func) {
@@ -30,7 +30,7 @@ impl LangInterpretor for Spanish {
             "un" | "uno" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
             "primer" | "primero" | "primera" => b.put(b"1"),
             "dos" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"2"),
-            "segundo" if b.ordinal_marker.is_some() => b.put(b"2"),
+            "segundo" if b.marker.is_ordinal() => b.put(b"2"),
             "segunda" => b.put(b"2"),
             "tres" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"3"),
             "tercer" | "tercero" | "tercera" => b.put(b"3"),
@@ -47,35 +47,39 @@ impl LangInterpretor for Spanish {
             "nueve" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"9"),
             "noveno" | "novena" => b.put(b"9"),
             "diez" | "décimo" | "décima" => b.put(b"10"),
-            "once" | "undécimo" | "undécima" | "decimoprimero" | "decimoprimera" => b.put(b"11"),
-            "doce" | "duodécimo" | "duodécima" | "decimosegundo" | "decimosegunda" => {
+            "once" | "undécimo" | "undécima" | "decimoprimero" | "decimoprimera" | "onceavo" => {
+                b.put(b"11")
+            }
+            "doce" | "duodécimo" | "duodécima" | "decimosegundo" | "decimosegunda" | "doceavo" => {
                 b.put(b"12")
             }
-            "trece" | "decimotercero" | "decimotercera" => b.put(b"13"),
-            "catorce" | "decimocuarto" | "decimocuarta" => b.put(b"14"),
-            "quince" | "decimoquinto" | "decimoquinta" => b.put(b"15"),
-            "dieciseis" | "dieciséis" | "decimosexto" | "decimosexta" => b.put(b"16"),
-            "diecisiete" | "decimoséptimo" | "decimoséptima" => b.put(b"17"),
-            "dieciocho" | "decimoctavo" | "decimoctava" => b.put(b"18"),
-            "diecinueve" | "decimonoveno" | "decimonovena" => b.put(b"19"),
-            "veinte" | "vigésimo" | "vigésima" => b.put(b"20"),
-            "veintiuno" => b.put(b"21"),
-            "veintidós" | "veintidos" => b.put(b"22"),
-            "veintitrés" | "veintitres" => b.put(b"23"),
-            "veinticuatro" => b.put(b"24"),
-            "veinticinco" => b.put(b"25"),
-            "veintiseis" | "veintiséis" => b.put(b"26"),
-            "veintisiete" => b.put(b"27"),
-            "veintiocho" => b.put(b"28"),
-            "veintinueve" => b.put(b"29"),
-            "treinta" | "trigésimo" | "trigésima" => b.put(b"30"),
-            "cuarenta" | "cuadragésimo" | "cuadragésima" => b.put(b"40"),
-            "cincuenta" | "quincuagésimo" | "quincuagésima" => b.put(b"50"),
-            "sesenta" | "sexagésimo" | "sexagésima" => b.put(b"60"),
-            "setenta" | "septuagésimo" | "septuagésima" => b.put(b"70"),
-            "ochenta" | "octogésimo" | "octogésima" => b.put(b"80"),
-            "noventa" | "nonagésimo" | "nonagésima" => b.put(b"90"),
-            "cien" | "ciento" | "centésimo" | "centésima" => b.put(b"100"),
+            "trece" | "decimotercero" | "decimotercera" | "treceavo" => b.put(b"13"),
+            "catorce" | "decimocuarto" | "decimocuarta" | "catorceavo" => b.put(b"14"),
+            "quince" | "decimoquinto" | "decimoquinta" | "quinceavo" => b.put(b"15"),
+            "dieciseis" | "dieciséis" | "decimosexto" | "decimosexta" | "deciseisavo" => {
+                b.put(b"16")
+            }
+            "diecisiete" | "decimoséptimo" | "decimoséptima" | "diecisieteavo" => b.put(b"17"),
+            "dieciocho" | "decimoctavo" | "decimoctava" | "dieciochoavo" => b.put(b"18"),
+            "diecinueve" | "decimonoveno" | "decimonovena" | "decinueveavo" => b.put(b"19"),
+            "veinte" | "vigésimo" | "vigésima" | "veintavo" | "veinteavo" => b.put(b"20"),
+            "veintiuno" | "veintiunoavo" => b.put(b"21"),
+            "veintidós" | "veintidos" | "veintidosavo" => b.put(b"22"),
+            "veintitrés" | "veintitres" | "veintitresavo" => b.put(b"23"),
+            "veinticuatro" | "veinticuatroavo" => b.put(b"24"),
+            "veinticinco" | "veinticincoavo" => b.put(b"25"),
+            "veintiseis" | "veintiséis" | "veintiseisavo" => b.put(b"26"),
+            "veintisiete" | "veintisieteavo" => b.put(b"27"),
+            "veintiocho" | "veintiochoavo" => b.put(b"28"),
+            "veintinueve" | "veintinueveavo" => b.put(b"29"),
+            "treinta" | "trigésimo" | "trigésima" | "treintavo" => b.put(b"30"),
+            "cuarenta" | "cuadragésimo" | "cuadragésima" | "cuarentavo" => b.put(b"40"),
+            "cincuenta" | "quincuagésimo" | "quincuagésima" | "cincuentavo" => b.put(b"50"),
+            "sesenta" | "sexagésimo" | "sexagésima" | "sesentavo" => b.put(b"60"),
+            "setenta" | "septuagésimo" | "septuagésima" | "setentavo" => b.put(b"70"),
+            "ochenta" | "octogésimo" | "octogésima" | "ochentavo" => b.put(b"80"),
+            "noventa" | "nonagésimo" | "nonagésima" | "noventavo" => b.put(b"90"),
+            "cien" | "ciento" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
             "dosciento" | "ducentésimo" | "ducentésima" => b.put(b"200"),
             "tresciento" | "tricentésimo" | "tricentésima" => b.put(b"300"),
             "cuatrociento" | "quadringentésimo" | "quadringentésima" => b.put(b"400"),
@@ -91,7 +95,10 @@ impl LangInterpretor for Spanish {
             _ => Err(Error::NaN),
         };
         if status.is_ok() {
-            b.ordinal_marker = num_marker;
+            b.marker = num_marker;
+            if b.marker.is_fraction() {
+                b.freeze()
+            }
         }
         status
     }
@@ -104,30 +111,44 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format(&self, b: DigitString) -> String {
-        if let Some(marker) = b.ordinal_marker {
-            format!("{}{}", b.into_string(), marker)
-        } else {
-            b.into_string()
+    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+        let repr = b.to_string();
+        let val: f64 = repr.parse().unwrap();
+        match b.marker {
+            MorphologicalMarker::Fraction(_) => (format!("1/{}", repr), val.recip()),
+            MorphologicalMarker::Ordinal(marker) => (format!("{}{}", repr, marker), val),
+            MorphologicalMarker::None => (repr, val),
         }
     }
 
-    fn format_decimal(&self, int: String, dec: String) -> String {
-        format!("{},{}", int, dec)
+    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+        let sint = int.to_string();
+        let sdec = dec.to_string();
+        let val = format!("{}.{}", sint, sdec).parse().unwrap();
+        (format!("{},{}", sint, sdec), val)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
+    fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
         let sing = lemmatize(word).trim_start_matches("decimo");
         let is_plur = word.ends_with('s');
         match sing {
-            "primer" => Some(".ᵉʳ"),
+            "primer" => MorphologicalMarker::Ordinal(".ᵉʳ"),
             "primero" | "segundo" | "tercero" | "cuarto" | "quinto" | "sexto" | "séptimo"
-            | "octavo" | "ctavo" | "noveno" => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
+            | "octavo" | "ctavo" | "noveno" => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+            }
             "primera" | "segunda" | "tercera" | "cuarta" | "quinta" | "sexta" | "séptima"
-            | "octava" | "ctava" | "novena" => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
-            ord if ord.ends_with("imo") => Some(if is_plur { ".ᵒˢ" } else { ".º" }),
-            ord if ord.ends_with("ima") => Some(if is_plur { ".ᵃˢ" } else { ".ª" }),
-            _ => None,
+            | "octava" | "ctava" | "novena" => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+            }
+            ord if ord.ends_with("imo") => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+            }
+            ord if ord.ends_with("ima") => {
+                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+            }
+            ord if ord.ends_with("avo") => MorphologicalMarker::Fraction("avo"),
+            _ => MorphologicalMarker::None,
         }
     }
 
@@ -254,11 +275,9 @@ mod tests {
 
     #[test]
     fn test_fractions() {
-        // TODO: coudn't find what the abbreviation is
-        // assert_text2digits!("doceavo", "12");
-        // assert_text2digits!("doceava", "12");
-        // assert_text2digits!("centésimo", "100");
-        // assert_text2digits!("ciento veintiochoavos", "128");
+        assert_text2digits!("doceavo", "1/12");
+        assert_text2digits!("centavo", "1/100");
+        assert_text2digits!("ciento veintiochoavos", "1/128");
     }
 
     #[test]

@@ -3,7 +3,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::LangInterpretor;
+use super::{LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -24,8 +24,8 @@ impl LangInterpretor for French {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
                     b.put(&ds)?;
-                    if ds.ordinal_marker.is_some() {
-                        b.ordinal_marker = ds.ordinal_marker;
+                    if ds.marker.is_ordinal() {
+                        b.marker = ds.marker;
                         b.freeze()
                     }
                     Ok(())
@@ -108,7 +108,7 @@ impl LangInterpretor for French {
             _ => Err(Error::NaN),
         };
         if status.is_ok() && lemma.ends_with("ème") {
-            b.ordinal_marker = self.get_morph_marker(num_func);
+            b.marker = self.get_morph_marker(num_func);
             b.freeze();
         }
         status
@@ -122,25 +122,30 @@ impl LangInterpretor for French {
         word == "virgule"
     }
 
-    fn format(&self, b: DigitString) -> String {
-        if let Some(marker) = b.ordinal_marker {
-            format!("{}{}", b.into_string(), marker)
+    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+        let repr = b.to_string();
+        let val = repr.parse().unwrap();
+        if let MorphologicalMarker::Ordinal(marker) = b.marker {
+            (format!("{}{}", b.to_string(), marker), val)
         } else {
-            b.into_string()
+            (repr, val)
         }
     }
 
-    fn format_decimal(&self, int: String, dec: String) -> String {
-        format!("{},{}", int, dec)
+    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+        let sint = int.to_string();
+        let sdec = dec.to_string();
+        let val = format!("{}.{}", sint, sdec).parse().unwrap();
+        (format!("{},{}", sint, sdec), val)
     }
 
-    fn get_morph_marker(&self, word: &str) -> Option<&'static str> {
+    fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
         if word.ends_with("ème") {
-            Some("ème")
+            MorphologicalMarker::Ordinal("ème")
         } else if word.ends_with("èmes") {
-            Some("èmes")
+            MorphologicalMarker::Ordinal("èmes")
         } else {
-            None
+            MorphologicalMarker::None
         }
     }
 

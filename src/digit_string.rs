@@ -3,15 +3,17 @@
 //! Build numeric representation using only elementary operations ensuring a
 //! valid construction at every step.
 
-use super::error::Error;
 use std::ops::Deref;
 
-#[derive(Debug, Clone)]
+use super::error::Error;
+use super::lang::MorphologicalMarker;
+
+#[derive(Debug)]
 pub struct DigitString {
     buffer: Vec<u8>,
     leading_zeroes: usize,
     frozen: bool,
-    pub ordinal_marker: Option<&'static str>,
+    pub marker: MorphologicalMarker,
 }
 
 fn all_zeros(slice: &[u8]) -> bool {
@@ -24,7 +26,7 @@ impl DigitString {
             buffer: Vec::with_capacity(4),
             leading_zeroes: 0,
             frozen: false,
-            ordinal_marker: None,
+            marker: MorphologicalMarker::None,
         }
     }
 
@@ -141,26 +143,15 @@ impl DigitString {
     }
 
     /// Formal base 10 string representation with leading zeroes
-    pub fn into_string(self) -> String {
+    pub fn to_string(&self) -> String {
         // we know that the string is valid.
         let mut res = "0".repeat(self.leading_zeroes);
-        res.push_str(&String::from_utf8(self.buffer).unwrap());
+        res.push_str(std::str::from_utf8(self.buffer.as_slice()).unwrap());
         res
     }
 
-    pub fn value(&self) -> f64 {
-        if self.buffer.is_empty() && self.leading_zeroes > 0 {
-            return 0.0;
-        }
-        // it's safe to unwrap since we are sure to have a valid number string
-        std::str::from_utf8(self.buffer.as_slice())
-            .unwrap()
-            .parse()
-            .unwrap()
-    }
-
     pub fn is_ordinal(&self) -> bool {
-        self.ordinal_marker.is_some()
+        self.marker.is_ordinal()
     }
 }
 
@@ -312,7 +303,7 @@ mod tests {
     fn test_shift_empty() {
         let mut builder = DigitString::new();
         builder.shift(2).unwrap();
-        assert_eq!(builder.into_string(), "100")
+        assert_eq!(builder.to_string(), "100")
     }
 
     #[test]
@@ -320,7 +311,7 @@ mod tests {
         let mut builder = DigitString::new();
         builder.put(b"1000").unwrap();
         builder.shift(2).unwrap();
-        assert_eq!(builder.into_string(), "1100")
+        assert_eq!(builder.to_string(), "1100")
     }
 
     #[test]
@@ -349,7 +340,7 @@ mod tests {
         builder.shift(2)?;
         builder.put(b"90")?;
         builder.put(b"2")?;
-        assert_eq!(builder.into_string(), "002792");
+        assert_eq!(builder.to_string(), "002792");
         Ok(())
     }
 }
