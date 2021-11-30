@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::lang::LangInterpretor;
 use crate::tokenizer::tokenize;
 
-pub struct WordToDigitParser<'a, T: LangInterpretor> {
+struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,

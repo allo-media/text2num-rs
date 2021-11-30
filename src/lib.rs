@@ -1,4 +1,4 @@
-pub mod digit_string;
+mod digit_string;
 pub mod error;
 pub mod lang;
 mod tokenizer;
@@ -6,7 +6,9 @@ pub mod word_to_digit;
 
 pub use error::Error;
 pub use lang::{LangInterpretor, Language};
-pub use word_to_digit::{replace_numbers, text2digits};
+pub use word_to_digit::{
+    find_numbers, replace_numbers, rewrite_numbers, text2digits, Occurence, Token,
+};
 
 #[cfg(test)]
 mod tests {
