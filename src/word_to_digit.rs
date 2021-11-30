@@ -1,7 +1,7 @@
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::tokenize;
 
 pub struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
@@ -266,7 +266,7 @@ pub fn rewrite_numbers<L: LangInterpretor, T: Token + From<String>, I: Iterator<
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
-    let out = rewrite_numbers(Tokenizer::new(text).map(|s| s.to_owned()), lang, threshold);
+    let out = rewrite_numbers(tokenize(text).map(|s| s.to_owned()), lang, threshold);
     out.join("")
 }
 

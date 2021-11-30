@@ -1,11 +1,15 @@
 #[derive(Debug)]
-pub struct Tokenizer<'a> {
+pub struct Tokenize<'a> {
     source: &'a str,
     chars: std::iter::Peekable<std::str::CharIndices<'a>>,
 }
 
-impl<'a> Tokenizer<'a> {
-    pub fn new(source: &'a str) -> Tokenizer<'a> {
+pub fn tokenize<'a>(source: &'a str) -> Tokenize<'a> {
+    Tokenize::new(source)
+}
+
+impl<'a> Tokenize<'a> {
+    fn new(source: &'a str) -> Tokenize<'a> {
         Self {
             source,
             chars: source.char_indices().peekable(),
@@ -39,7 +43,7 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-impl<'a> Iterator for Tokenizer<'a> {
+impl<'a> Iterator for Tokenize<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
@@ -63,7 +67,7 @@ mod tests {
     #[test]
     fn test_tokenizer() {
         let src = "Here, some phrase: hello!";
-        let tokens: Vec<&str> = Tokenizer::new(src).collect();
+        let tokens: Vec<&str> = Tokenize::new(src).collect();
         dbg!(&tokens);
         assert_eq!(tokens.len(), 8);
         assert_eq!(tokens[0], "Here");
