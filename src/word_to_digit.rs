@@ -1,3 +1,10 @@
+/*!
+Top level API.
+
+For an introduction with examples, see the [crate level documentation](super).
+
+*/
+
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
@@ -61,6 +68,8 @@ pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, E
     }
 }
 
+/// To be able to find or replace numbers in token streams, the token type
+/// must implement this trait.
 pub trait Token {
     fn text(&self) -> &str;
     fn text_lowercase(&self) -> String;

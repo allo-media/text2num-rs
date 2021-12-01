@@ -17,6 +17,18 @@ fn lemmatize(word: &str) -> &str {
 
 pub struct English {}
 
+impl Default for English {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl English {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
 impl LangInterpretor for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In English, numbers can be compounded to form a group with "-"

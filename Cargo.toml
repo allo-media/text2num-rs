@@ -8,7 +8,6 @@ description = "Parse and convert numbers written in English, Spanish or French i
 keywords = ["French", "Spanish", "English", "NLP", "words-to-numbers"]
 categories = ["text-processing"]
 repository = "https://github.com/allo-media/text2num-rs"
-homepage = "https://github.com/allo-media/text2num-rs"
 readme = "README.md"
 exclude = [".circleci", ".gitignore"]
 

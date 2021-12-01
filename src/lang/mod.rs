@@ -1,10 +1,23 @@
+//! Language interpreters and their support data.
+//!
+//!
 mod en;
 mod es;
 mod fr;
 
 use crate::digit_string::DigitString;
+
 use crate::error::Error;
 
+pub use en::English;
+pub use es::Spanish;
+pub use fr::French;
+
+/// Model the Morphological markers that differenciate ordinals or fractions from cardinals,
+/// and that must be retained on the digit form.
+///
+/// For examples in English, "twentieth" becomes "20th", the ordinal marker "th"
+/// (`MorphologicalMarker::Ordinal("th")`) is kept.
 #[derive(Debug, PartialEq)]
 pub enum MorphologicalMarker {
     Ordinal(&'static str),
@@ -24,7 +37,10 @@ impl MorphologicalMarker {
     }
 }
 
-/// You should never mix calls to `apply` and `apply_decimal` on the same DigitString.
+/// This trait describes the linguistic services a human language interpreter must provide.
+///
+/// All methods must be implemented except the [`exec_group`], which comes with a default implementation.
+/// Self must be stateless.
 pub trait LangInterpretor {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error>;
     fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error>;
@@ -54,22 +70,22 @@ pub trait LangInterpretor {
 }
 
 pub enum Language {
-    French(fr::French),
-    English(en::English),
-    Spanish(es::Spanish),
+    French(French),
+    English(English),
+    Spanish(Spanish),
 }
 
 impl Language {
     pub fn french() -> Self {
-        Language::French(fr::French {})
+        Language::French(French {})
     }
 
     pub fn english() -> Self {
-        Language::English(en::English {})
+        Language::English(English {})
     }
 
     pub fn spanish() -> Self {
-        Language::Spanish(es::Spanish {})
+        Language::Spanish(Spanish {})
     }
 }
 

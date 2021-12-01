@@ -19,6 +19,18 @@ fn lemmatize(word: &str) -> &str {
 
 pub struct Spanish {}
 
+impl Default for Spanish {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl Spanish {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
 impl LangInterpretor for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
