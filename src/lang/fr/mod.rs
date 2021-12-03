@@ -1,3 +1,6 @@
+/// French number interpretor.
+///
+/// It supports regional variants.
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -161,7 +164,7 @@ impl LangInterpretor for French {
         }
     }
 
-    fn is_insignificant(&self, word: &str) -> bool {
+    fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
 }

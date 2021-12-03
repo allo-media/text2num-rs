@@ -1,7 +1,7 @@
 /*!
 Top level API.
 
-For an introduction with examples, see the [crate level documentation](super).
+For an overview with examples and use cases, see the [crate level documentation](super).
 
 */
 
@@ -60,7 +60,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 }
 
 /// Interpret the `text` as a integer number or ordinal, and translate it into digits.
-/// Return an error if the text couldn't be undestood as a correct number.
+/// Return an error if the text couldn't be undestood as a valid number.
 pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
     match lang.exec_group(text.split_whitespace()) {
         Ok(ds) => Ok(lang.format_and_value(ds).0),
@@ -68,15 +68,77 @@ pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, E
     }
 }
 
-/// To be able to find or replace numbers in token streams, the token type
-/// must implement this trait.
+/// An iterface for dealing with natural language tokens.
 pub trait Token {
+    /// The text of the word or symbol (e.g. punctuation) represented by this token
     fn text(&self) -> &str;
+    /// The lowercase representation of the word represented by this token
     fn text_lowercase(&self) -> String;
-    /// self may need to be updated depending on the token sequence it replaces
+    /// When a digit token is built to replace a sequence of word tokens,
+    /// this method is called on the new token (`self`) with the replaced
+    /// sequence as argument.
     fn update<I: Iterator<Item = Self>>(&mut self, replaced: I);
-    /// Is there a separation between self and the previous *word*
-    /// that is not represented by a token?
+    /**
+    In some token streams (e.g. ASR output), there is no punctuation
+    tokens to separate words that must be undestood separately, but
+    the tokens themselves may embed additional information to convey that
+    distinction (e.g. timing information that can reveal voice pauses).
+    This method should return true if `self` and `previous` are unrelated.
+
+    # Example
+
+    ```rust
+    use text2num::{find_numbers, Language, Token};
+
+    struct DecodedWord<'a> {
+        text: &'a str,
+        start: u64,  // in milliseconds
+        end: u64
+    }
+
+    impl Token for DecodedWord<'_> {
+        fn text(&self) -> &str {
+            self.text
+        }
+
+        fn text_lowercase(&self) -> String {
+            self.text.to_lowercase()
+        }
+
+        fn update<I: Iterator<Item = Self>>(&mut self, _iterator: I) {
+            // not needed here
+        }
+
+        fn nt_separated(&self, previous: &Self) -> bool {
+            // if there is a voice pause of more than 100ms between words, it is worth a punctuation
+            self.start - previous.end > 100
+        }
+    }
+    // Simulate ASR output for “ 3.14  5 ”
+    let output = [
+        DecodedWord{ text: "three", start: 0, end: 100},
+        DecodedWord{ text: "point", start: 100, end: 200},
+        DecodedWord{ text: "one", start: 200, end: 300},
+        DecodedWord{ text: "four", start: 300, end: 400},
+        DecodedWord{ text: "five", start: 510, end: 650},
+    ];
+
+    assert!(
+        !output[1].nt_separated(&output[0])
+    );
+    assert!(
+        !output[2].nt_separated(&output[1])
+    );
+    assert!(
+        !output[3].nt_separated(&output[2])
+    );
+    // but "five" is not part of the previous number
+    assert!(
+        output[4].nt_separated(&output[3])
+    );
+    ```
+
+    */
     fn nt_separated(&self, previous: &Self) -> bool;
 }
 
@@ -99,11 +161,18 @@ impl Token for String {
 }
 
 #[derive(Debug)]
+/// This type describes a number found in a token stream.
 pub struct Occurence {
+    /// The offset of the first token of the number in the stream
     pub start: usize,
+    /// The offset after the last token representing the number in the stream
     pub end: usize,
+    /// The digit representation of the number
     pub text: String,
+    /// The value of the number. If the number is an ordinal, the value
+    /// is the rank it represents.
     pub value: f64,
+    /// A flag to distinguish ordinals
     pub is_ordinal: bool,
 }
 
@@ -163,7 +232,7 @@ impl NumTracker {
         let text = token.text();
         self.last_match_is_contiguous = self.last_match_is_contiguous
             && (text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
-                || lang.is_insignificant(text));
+                || lang.is_linking(text));
     }
 
     fn replace<T: Token + From<String>>(mut self, tokens: &mut Vec<T>) {
@@ -194,7 +263,7 @@ impl NumTracker {
     }
 }
 
-/// Find spelled numbers (including decimal) in the `text`.
+/// Find spelled numbers (including decimal numbers) in the `text`.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 fn track_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'a T>>(
     input: I,
@@ -249,8 +318,14 @@ fn track_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'a T
     tracker
 }
 
-/// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
-/// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
+/**
+Find the spelled numbers (including decimal numbers) in a token stream.
+
+Return a list of the successive [`Occurence`]s of numbers in the stream.
+The `threshold` drives the *lone number* policy: if a number is isolated — that is,
+surrounded by significant non-number words — and lower than `threshold`, then it
+is ignored.
+*/
 pub fn find_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'a T>>(
     input: I,
     lang: &L,
@@ -259,7 +334,7 @@ pub fn find_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'
     track_numbers(input, lang, threshold).into_vec()
 }
 
-/// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
+/// Find spelled numbers (including decimal) in the token stream and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn rewrite_numbers<L: LangInterpretor, T: Token + From<String>, I: Iterator<Item = T>>(
     input: I,

@@ -1,3 +1,4 @@
+/// Spanish number interpretor
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -164,7 +165,7 @@ impl LangInterpretor for Spanish {
         }
     }
 
-    fn is_insignificant(&self, word: &str) -> bool {
+    fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
 }

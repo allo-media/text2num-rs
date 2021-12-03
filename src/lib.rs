@@ -110,13 +110,13 @@ use text2num::{rewrite_numbers, Language};
 let en = Language::english();
 
 // Poor man's tokenizer
-let stream = "I have twenty dollars in my pocket".split_whitespace().map(|s| s.to_owned());
+let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| s.to_owned());
 
 let processed_stream = rewrite_numbers(stream, &en, 10.0);
 
 assert_eq!(
     processed_stream,
-    vec!["I", "have", "20", "dollars", "in", "my", "pocket"]
+    vec!["I", "have", "220", "dollars", "in", "my", "pocket"]
 );
 ```
 
