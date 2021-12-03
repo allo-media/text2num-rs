@@ -28,10 +28,31 @@ jobs:
       - run:
           name: Run all tests
           command: cargo test --all
+      - run:
+          name: Check packaging
+          command: cargo publish --dry-run
+  deploy:
+    docker:
+      - image: cimg/rust:1.56
+    steps:
+      - checkout
+      - run:
+          name: login to crate.io
+          command: cargo login $CRATEIO_TOKEN
+      - run:
+          name: publish package
+          command: cargo publish
+
 
 workflows:
   version: 2
-  build_test:
+  build_test_deploy:
     jobs:
       - test
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only: release
 
