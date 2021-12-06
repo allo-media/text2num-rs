@@ -1,3 +1,5 @@
+// English number interpretor
+
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -16,6 +18,18 @@ fn lemmatize(word: &str) -> &str {
 }
 
 pub struct English {}
+
+impl Default for English {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl English {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
 
 impl LangInterpretor for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
@@ -144,7 +158,7 @@ impl LangInterpretor for English {
         }
     }
 
-    fn is_insignificant(&self, word: &str) -> bool {
+    fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
 }
