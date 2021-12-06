@@ -37,7 +37,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: login to crate.io
+          name: login to crates.io
           command: cargo login $CRATEIO_TOKEN
       - run:
           name: publish package
