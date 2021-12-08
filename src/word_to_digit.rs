@@ -179,7 +179,7 @@ pub struct Occurence {
 #[derive(Debug)]
 struct NumTracker {
     matches: Vec<Occurence>,
-    keep: Vec<bool>,
+    on_hold: Option<Occurence>,
     threshold: f64,
     last_match_is_contiguous: bool,
     match_start: usize,
@@ -190,7 +190,7 @@ impl NumTracker {
     fn new(threshold: f64) -> Self {
         Self {
             matches: Vec::with_capacity(2),
-            keep: Vec::with_capacity(2),
+            on_hold: None,
             threshold,
             last_match_is_contiguous: false,
             match_start: 0,
@@ -206,25 +206,26 @@ impl NumTracker {
     }
 
     fn number_end(&mut self, is_ordinal: bool, digits: String, value: f64) {
-        if self.last_match_is_contiguous {
-            if let Some(prev) = self.keep.last_mut() {
-                *prev = true;
-            }
-            self.keep.push(true);
-        } else if digits.text().len() > 1 && !is_ordinal || value > self.threshold {
-            self.keep.push(true);
-        } else {
-            self.keep.push(false);
-        }
-        //
-        self.last_match_is_contiguous = true;
-        self.matches.push(Occurence {
+        let occurence = Occurence {
             start: self.match_start,
             end: self.match_end,
             text: digits,
             is_ordinal,
             value,
-        });
+        };
+        if self.last_match_is_contiguous {
+            if let Some(prev) = self.on_hold.take() {
+                self.matches.push(prev);
+            }
+            self.matches.push(occurence);
+        } else if occurence.text.len() > 1 && !is_ordinal || value > self.threshold {
+            self.matches.push(occurence);
+            self.on_hold.take();
+        } else {
+            self.on_hold.replace(occurence);
+        }
+        //
+        self.last_match_is_contiguous = true;
         self.match_start = self.match_end;
     }
 
@@ -236,30 +237,19 @@ impl NumTracker {
     }
 
     fn replace<T: Token + From<String>>(mut self, tokens: &mut Vec<T>) {
-        self.keep.reverse();
         self.matches.reverse();
-        for (
-            replace,
-            Occurence {
-                start, end, text, ..
-            },
-        ) in self.keep.into_iter().zip(self.matches)
+        for Occurence {
+            start, end, text, ..
+        } in self.matches.into_iter()
         {
             let mut repr: T = text.into();
-            if replace {
-                repr.update(tokens.drain(start..end));
-                tokens.insert(start, repr);
-            }
+            repr.update(tokens.drain(start..end));
+            tokens.insert(start, repr);
         }
     }
 
     fn into_vec(self) -> Vec<Occurence> {
         self.matches
-            .into_iter()
-            .zip(self.keep.into_iter())
-            .filter(|(_, keep)| *keep)
-            .map(|(m, _)| m)
-            .collect()
     }
 }
 
