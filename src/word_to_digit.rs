@@ -86,10 +86,6 @@ pub trait Token {
     fn text(&self) -> &str;
     /// The lowercase representation of the word represented by this token
     fn text_lowercase(&self) -> String;
-    /// When a digit token is built to replace a sequence of word tokens,
-    /// this method is called on the new token (`self`) with the replaced
-    /// sequence as argument.
-    fn update<I: Iterator<Item = Self>>(&mut self, replaced: I);
     /**
     In some token streams (e.g. ASR output), there is no punctuation
     tokens to separate words that must be undestood separately, but
@@ -115,10 +111,6 @@ pub trait Token {
 
         fn text_lowercase(&self) -> String {
             self.text.to_lowercase()
-        }
-
-        fn update<I: Iterator<Item = Self>>(&mut self, _iterator: I) {
-            // not needed here
         }
 
         fn nt_separated(&self, previous: &Self) -> bool {
@@ -154,7 +146,12 @@ pub trait Token {
     fn nt_separated(&self, previous: &Self) -> bool;
 }
 
-impl Token for String {
+pub trait Replace {
+    /// Represents a type that can be created from a `String` and an Iterator on elements of same type.
+    fn replace<I: Iterator<Item = Self>>(replaced: I, data: String) -> Self;
+}
+
+impl Token for &String {
     fn text(&self) -> &str {
         self.as_ref()
     }
@@ -163,12 +160,14 @@ impl Token for String {
         self.to_lowercase()
     }
 
-    fn update<I: Iterator<Item = Self>>(&mut self, _replaced: I) {
-        // nop
-    }
-
     fn nt_separated(&self, _previous: &Self) -> bool {
         false
+    }
+}
+
+impl Replace for String {
+    fn replace<I: Iterator<Item = Self>>(_replaced: I, data: String) -> Self {
+        data
     }
 }
 
@@ -256,13 +255,12 @@ impl NumTracker {
         !self.matches.is_empty()
     }
 
-    fn replace<T: Token + From<String>>(self, tokens: &mut Vec<T>) {
+    fn replace<T: Replace>(self, tokens: &mut Vec<T>) {
         for Occurence {
             start, end, text, ..
         } in self.matches.into_iter().rev()
         {
-            let mut repr: T = text.into();
-            repr.update(tokens.drain(start..end));
+            let repr: T = Replace::replace(tokens.drain(start..end), text);
             tokens.insert(start, repr);
         }
     }
@@ -278,20 +276,20 @@ pub struct FindNumbers<'a, L, T, I>
 where
     L: LangInterpretor,
     T: Token,
-    I: Iterator<Item = (usize, &'a T)>,
+    I: Iterator<Item = (usize, T)>,
 {
     lang: &'a L,
     input: I,
     parser: WordToDigitParser<'a, L>,
     tracker: NumTracker,
-    previous: Option<&'a T>,
+    previous: Option<T>,
 }
 
 impl<'a, L, T, I> FindNumbers<'a, L, T, I>
 where
     L: LangInterpretor,
     T: Token,
-    I: Iterator<Item = (usize, &'a T)>,
+    I: Iterator<Item = (usize, T)>,
 {
     fn new(input: I, lang: &'a L, threshold: f64) -> Self {
         Self {
@@ -303,12 +301,12 @@ where
         }
     }
 
-    fn push(&mut self, pos: usize, token: &'a T) {
+    fn push(&mut self, pos: usize, token: T) {
         if token.text() == "-" || is_whitespace(token.text()) {
             return;
         }
         let lo_token = token.text_lowercase();
-        let test = if let Some(prev) = self.previous {
+        let test = if let Some(ref prev) = self.previous {
             if token.nt_separated(prev) {
                 "," // force stop without loosing token (see below)
             } else {
@@ -332,10 +330,10 @@ where
                 if self.parser.push(&lo_token).is_ok() {
                     self.tracker.number_advanced(pos);
                 } else {
-                    self.tracker.outside_number(token, self.lang)
+                    self.tracker.outside_number(&token, self.lang)
                 }
             }
-            Err(_) => self.tracker.outside_number(token, self.lang),
+            Err(_) => self.tracker.outside_number(&token, self.lang),
         }
         self.previous.replace(token);
     }
@@ -361,7 +359,7 @@ impl<'a, L, T, I> Iterator for FindNumbers<'a, L, T, I>
 where
     L: LangInterpretor,
     T: Token,
-    I: Iterator<Item = (usize, &'a T)>,
+    I: Iterator<Item = (usize, T)>,
 {
     type Item = Occurence;
 
@@ -382,9 +380,9 @@ where
 
 /// Find spelled numbers (including decimal numbers) in the `text`.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-fn track_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'a T>>(
+fn track_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
     input: I,
-    lang: &'a L,
+    lang: &L,
     threshold: f64,
 ) -> NumTracker {
     let scanner = FindNumbers::new(input.enumerate(), lang, threshold);
@@ -399,9 +397,9 @@ The `threshold` drives the *lone number* policy: if a number is isolated — tha
 surrounded by significant non-number words — and lower than `threshold`, then it
 is ignored.
 */
-pub fn find_numbers<'a, L: LangInterpretor, T: Token + 'a, I: Iterator<Item = &'a T>>(
+pub fn find_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
     input: I,
-    lang: &'a L,
+    lang: &L,
     threshold: f64,
 ) -> Vec<Occurence> {
     track_numbers(input, lang, threshold).into_vec()
@@ -423,28 +421,32 @@ pub fn find_numbers_iter<'a, L, T, I>(
 where
     L: LangInterpretor,
     T: Token,
-    I: Iterator<Item = &'a T>,
+    I: Iterator<Item = T>,
 {
     FindNumbers::new(input.enumerate(), lang, threshold)
 }
 
 /// Find spelled numbers (including decimal) in the token stream and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-pub fn rewrite_numbers<L: LangInterpretor, T: Token + From<String>, I: Iterator<Item = T>>(
-    input: I,
-    lang: &L,
-    threshold: f64,
-) -> Vec<T> {
-    let mut out: Vec<T> = input.collect();
-    let tracker = track_numbers(out.iter(), lang, threshold);
-    tracker.replace(&mut out);
-    out
+pub fn rewrite_numbers<'a, L, T>(mut input: Vec<T>, lang: &L, threshold: f64) -> Vec<T>
+where
+    L: LangInterpretor,
+    T: Replace + 'a,
+    for<'b> &'b T: Token,
+{
+    let tracker = track_numbers(input.iter(), lang, threshold);
+    tracker.replace(&mut input);
+    input
 }
 
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
-    let out = rewrite_numbers(tokenize(text).map(|s| s.to_owned()), lang, threshold);
+    let out = rewrite_numbers(
+        tokenize(text).map(|s| s.to_owned()).collect(),
+        lang,
+        threshold,
+    );
     out.join("")
 }
 
