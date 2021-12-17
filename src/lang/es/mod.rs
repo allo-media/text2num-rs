@@ -126,7 +126,7 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
         let repr = b.to_string();
         let val: f64 = repr.parse().unwrap();
         match b.marker {
@@ -136,7 +136,7 @@ impl LangInterpretor for Spanish {
         }
     }
 
-    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{}.{}", sint, sdec).parse().unwrap();

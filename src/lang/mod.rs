@@ -83,11 +83,11 @@ pub trait LangInterpretor {
     /// For example `"point"` is a decimal separator in English.
     fn is_decimal_sep(&self, word: &str) -> bool;
     /// Format `b` as digit string and evaluate it, according to the language's rules.
-    fn format_and_value(&self, b: DigitString) -> (String, f64);
+    fn format_and_value(&self, b: &DigitString) -> (String, f64);
     /// Format the decimal number given as integral part `int` and decimals `dec` according the the language's rules.
     ///
     /// Also return its value as float.
-    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64);
+    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64);
     /// Return true if `word` does not isolate numbers in a sequence, but links them, or is truely insignificant noise.
     ///
     /// For example, in English in the phrase "*two plus three is uh five*", the words "*plus*" and "*is*" are linking words,
@@ -167,7 +167,7 @@ macro_rules! delegate {
                 )*
             }
         }
-        fn format_and_value(&self, b: DigitString) -> (String, f64){
+        fn format_and_value(&self, b: &DigitString) -> (String, f64){
             match self{
                 $(
                     Language::$variant(l) => l.format_and_value(b),
@@ -175,7 +175,7 @@ macro_rules! delegate {
             }
         }
 
-        fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+        fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
             match self {
                 $(
                     Language::$variant(l) => l.format_decimal_and_value(int, dec),
