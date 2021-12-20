@@ -40,7 +40,7 @@ impl LangInterpretor for Spanish {
         }
         let status = match lemmatize(num_func) {
             "cero" => b.put(b"0"),
-            "un" | "uno" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
+            "un" | "uno" | "una" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"1"),
             "primer" | "primero" | "primera" => b.put(b"1"),
             "dos" if b.peek(2) != b"10" && b.peek(2) != b"20" => b.put(b"2"),
             "segundo" if b.marker.is_ordinal() => b.put(b"2"),
@@ -76,7 +76,7 @@ impl LangInterpretor for Spanish {
             "dieciocho" | "decimoctavo" | "decimoctava" | "dieciochoavo" => b.put(b"18"),
             "diecinueve" | "decimonoveno" | "decimonovena" | "decinueveavo" => b.put(b"19"),
             "veinte" | "vigésimo" | "vigésima" | "veintavo" | "veinteavo" => b.put(b"20"),
-            "veintiuno" | "veintiunoavo" => b.put(b"21"),
+            "veintiuno" | "veintiuna" | "veintiunoavo" => b.put(b"21"),
             "veintidós" | "veintidos" | "veintidosavo" => b.put(b"22"),
             "veintitrés" | "veintitres" | "veintitresavo" => b.put(b"23"),
             "veinticuatro" | "veinticuatroavo" => b.put(b"24"),
@@ -92,15 +92,17 @@ impl LangInterpretor for Spanish {
             "setenta" | "septuagésimo" | "septuagésima" | "setentavo" => b.put(b"70"),
             "ochenta" | "octogésimo" | "octogésima" | "ochentavo" => b.put(b"80"),
             "noventa" | "nonagésimo" | "nonagésima" | "noventavo" => b.put(b"90"),
-            "cien" | "ciento" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
-            "dosciento" | "ducentésimo" | "ducentésima" => b.put(b"200"),
-            "tresciento" | "tricentésimo" | "tricentésima" => b.put(b"300"),
-            "cuatrociento" | "quadringentésimo" | "quadringentésima" => b.put(b"400"),
-            "quiniento" | "quingentésimo" | "quingentésima" => b.put(b"500"),
-            "seisciento" | "sexcentésimo" | "sexcentésima" => b.put(b"600"),
-            "seteciento" | "septingentésimo" | "septingentésima" => b.put(b"700"),
-            "ochociento" | "octingentésimo" | "octingentésima" => b.put(b"800"),
-            "noveciento" | "noningentésimo" | "noningentésima" => b.put(b"900"),
+            "cien" | "ciento" | "cienta" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
+            "dosciento" | "doscienta" | "ducentésimo" | "ducentésima" => b.put(b"200"),
+            "tresciento" | "trescienta" | "tricentésimo" | "tricentésima" => b.put(b"300"),
+            "cuatrociento" | "cuatrocienta" | "quadringentésimo" | "quadringentésima" => {
+                b.put(b"400")
+            }
+            "quiniento" | "quinienta" | "quingentésimo" | "quingentésima" => b.put(b"500"),
+            "seisciento" | "seiscienta" | "sexcentésimo" | "sexcentésima" => b.put(b"600"),
+            "seteciento" | "setecienta" | "septingentésimo" | "septingentésima" => b.put(b"700"),
+            "ochociento" | "ochocienta" | "octingentésimo" | "octingentésima" => b.put(b"800"),
+            "noveciento" | "novecienta" | "noningentésimo" | "noningentésima" => b.put(b"900"),
             "mil" | "milésimo" | "milésima" => b.shift(3),
             "millon" | "millón" | "millonésimo" | "millonésima" => b.shift(6),
             "y" if b.len() >= 2 => Err(Error::Incomplete),
@@ -124,7 +126,7 @@ impl LangInterpretor for Spanish {
         word == "coma"
     }
 
-    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
         let repr = b.to_string();
         let val: f64 = repr.parse().unwrap();
         match b.marker {
@@ -134,7 +136,7 @@ impl LangInterpretor for Spanish {
         }
     }
 
-    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{}.{}", sint, sdec).parse().unwrap();
@@ -236,6 +238,7 @@ mod tests {
         assert_text2digits!("ochenta y uno", "81");
         assert_text2digits!("cien", "100");
         assert_text2digits!("ciento uno", "101");
+        assert_text2digits!("cienta una", "101");
         assert_text2digits!("ciento quince", "115");
         assert_text2digits!("doscientos", "200");
         assert_text2digits!("doscientos uno", "201");
@@ -320,6 +323,10 @@ mod tests {
         assert_replace_numbers!(
             "Veinticinco vacas, doce gallinas y ciento veinticinco kg de patatas.",
             "25 vacas, 12 gallinas y 125 kg de patatas."
+        );
+        assert_replace_numbers!(
+            "trescientos hombres y quinientas mujeres",
+            "300 hombres y 500 mujeres"
         );
         assert_replace_numbers!("Mil doscientos sesenta y seis dolares.", "1266 dolares.");
         assert_replace_numbers!("un dos tres cuatro veinte quince.", "1 2 3 4 20 15.");

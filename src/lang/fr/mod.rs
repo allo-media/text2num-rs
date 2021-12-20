@@ -137,7 +137,7 @@ impl LangInterpretor for French {
         word == "virgule"
     }
 
-    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
         let repr = b.to_string();
         let val = repr.parse().unwrap();
         if let MorphologicalMarker::Ordinal(marker) = b.marker {
@@ -147,7 +147,7 @@ impl LangInterpretor for French {
         }
     }
 
-    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{}.{}", sint, sdec).parse().unwrap();
@@ -353,6 +353,10 @@ mod tests {
             "12,99, 120,05, 1,236, 1,2 3 6."
         );
         assert_replace_numbers!("zéro virgule cent douze", "0,112");
+        assert_replace_numbers!(
+            "la densité moyenne est de zéro virgule cinq.",
+            "la densité moyenne est de 0,5."
+        );
     }
 
     #[test]

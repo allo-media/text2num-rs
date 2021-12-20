@@ -110,7 +110,7 @@ use text2num::{rewrite_numbers, Language};
 let en = Language::english();
 
 // Poor man's tokenizer
-let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| s.to_owned());
+let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| s.to_owned()).collect();
 
 let processed_stream = rewrite_numbers(stream, &en, 10.0);
 
@@ -143,15 +143,12 @@ impl Token for DecodedWord<'_> {
         self.text.to_lowercase()
     }
 
-    fn update<I: Iterator<Item = Self>>(&mut self, _iterator: I) {
-        // not needed here
-    }
-
     fn nt_separated(&self, previous: &Self) -> bool {
         // if there is a voice pause of more than 100ms between words, it is worth a punctuation
         self.start - previous.end > 100
     }
 }
+
 
 // Simulate ASR output
 
@@ -164,7 +161,7 @@ let stream = [
     DecodedWord{ text: "in", start: 800, end: 900},
     DecodedWord{ text: "my", start: 900, end: 1000},
     DecodedWord{ text: "pocket", start: 1010, end: 1410},
-].iter();
+].into_iter();
 
 // Process
 

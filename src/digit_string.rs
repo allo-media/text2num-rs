@@ -30,6 +30,14 @@ impl DigitString {
         }
     }
 
+    /// Clear DigitString as if it was brand new.
+    pub fn reset(&mut self) {
+        self.leading_zeroes = 0;
+        self.frozen = false;
+        self.marker = MorphologicalMarker::None;
+        self.buffer.clear();
+    }
+
     /// Freeze the DigitSring to signal the number is complete.
     ///
     /// Useful for languages that use some kind of flexion or suffix to mark the end.

@@ -124,7 +124,7 @@ impl LangInterpretor for English {
         word == "point"
     }
 
-    fn format_and_value(&self, b: DigitString) -> (String, f64) {
+    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
         let repr = b.to_string();
         let val: f64 = repr.parse().unwrap();
         if let MorphologicalMarker::Ordinal(marker) = b.marker {
@@ -134,7 +134,7 @@ impl LangInterpretor for English {
         }
     }
 
-    fn format_decimal_and_value(&self, int: DigitString, dec: DigitString) -> (String, f64) {
+    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let irepr = int.to_string();
         let drepr = dec.to_string();
         let frepr = format!("{}.{}", irepr, drepr);
