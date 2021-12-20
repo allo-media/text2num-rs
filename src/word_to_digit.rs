@@ -307,7 +307,7 @@ where
         }
         let lo_token = token.text_lowercase();
         let test = if let Some(ref prev) = self.previous {
-            if token.nt_separated(prev) {
+            if self.parser.has_number() && token.nt_separated(prev) {
                 "," // force stop without loosing token (see below)
             } else {
                 &lo_token
@@ -498,6 +498,23 @@ mod tests {
         assert_eq!(ocs.len(), 1);
         assert_eq!(ocs[0].text, "37");
         assert_eq!(ocs[0].value, 37.0);
+    }
+
+    #[test]
+    fn test_find_isolated_with_leading_zero() {
+        let fr = Language::french();
+        let ocs = find_numbers(
+            "quatre-vingt-douze slash zéro deux"
+                .split_whitespace()
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>()
+                .iter(),
+            &fr,
+            10.0,
+        );
+        dbg!(&ocs);
+        assert_eq!(ocs.len(), 2);
+        assert_eq!(ocs[1].text, "02");
     }
 
     #[test]
