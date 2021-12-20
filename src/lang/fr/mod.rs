@@ -353,6 +353,10 @@ mod tests {
             "12,99, 120,05, 1,236, 1,2 3 6."
         );
         assert_replace_numbers!("zéro virgule cent douze", "0,112");
+        assert_replace_numbers!(
+            "la densité moyenne est de zéro virgule cinq.",
+            "la densité moyenne est de 0,5."
+        );
     }
 
     #[test]
