@@ -51,7 +51,7 @@ impl LangInterpretor for French {
         let lemma = lemmatize(num_func);
         let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" if b.peek(2) != b"10" => b.put(b"1"),
+            "un" | "unième" | "premier" | "première" if b.peek(2) != b"10" => b.put(b"1"),
             "deux" | "deuxième" if b.peek(2) != b"10" => b.put(b"2"),
             "trois" | "troisième" if b.peek(2) != b"10" => b.put(b"3"),
             "quatre" | "quatrième" if b.peek(2) != b"10" => b.put(b"4"),
@@ -122,8 +122,9 @@ impl LangInterpretor for French {
 
             _ => Err(Error::NaN),
         };
-        if status.is_ok() && lemma.ends_with("ème") {
-            b.marker = self.get_morph_marker(num_func);
+        let marker = self.get_morph_marker(num_func);
+        if status.is_ok() && !marker.is_none() {
+            b.marker = marker;
             b.freeze();
         }
         status
@@ -159,6 +160,14 @@ impl LangInterpretor for French {
             MorphologicalMarker::Ordinal("ème")
         } else if word.ends_with("èmes") {
             MorphologicalMarker::Ordinal("èmes")
+        } else if word.ends_with("ier") {
+            MorphologicalMarker::Ordinal("er")
+        } else if word.ends_with("iers") {
+            MorphologicalMarker::Ordinal("ers")
+        } else if word.ends_with("ière") {
+            MorphologicalMarker::Ordinal("ère")
+        } else if word.ends_with("ières") {
+            MorphologicalMarker::Ordinal("ères")
         } else {
             MorphologicalMarker::None
         }
@@ -381,9 +390,9 @@ mod tests {
         );
         assert_replace_all_numbers!(
             "Mon premier arrive avant mon deuxième et mon troisième",
-            "Mon premier arrive avant mon 2ème et mon 3ème"
+            "Mon 1er arrive avant mon 2ème et mon 3ème"
         );
-        assert_replace_numbers!("Premier, deuxième, troisième", "Premier, 2ème, 3ème");
+        assert_replace_numbers!("Premier, deuxième, troisième", "1er, 2ème, 3ème");
     }
 
     #[test]
