@@ -35,9 +35,9 @@ impl French {
 }
 
 bitflags! {
-    /// Words that can be temporarily banned because of linguistic features.
+    /// Words that can be temporarily blocked because of linguistic features.
     ///(logical, numerical feature inconsistencies are already taken care of by DigitString)
-    struct Banned: u64 {
+    struct Excludable: u64 {
         const UN = 1;
         const DEUX = 2;
         const TROIS = 4;
@@ -65,25 +65,25 @@ impl LangInterpretor for French {
                 Err(err) => Err(err),
             };
         }
-        let banned = Banned::from_bits_truncate(b.flags);
-        let mut to_ban = Banned::empty();
+        let blocked = Excludable::from_bits_truncate(b.flags);
+        let mut to_block = Excludable::empty();
 
         let lemma = lemmatize(num_func);
         let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" | "premier" | "première" if !banned.contains(Banned::UN) => {
+            "un" | "unième" | "premier" | "première" if !blocked.contains(Excludable::UN) => {
                 b.put(b"1")
             }
-            "deux" | "deuxième" if !banned.contains(Banned::DEUX) => b.put(b"2"),
-            "trois" | "troisième" if !banned.contains(Banned::TROIS) => b.put(b"3"),
-            "quatre" | "quatrième" if !banned.contains(Banned::QUATRE) => b.put(b"4"),
-            "cinq" | "cinquième" if !banned.contains(Banned::CINQ) => b.put(b"5"),
-            "six" | "sixième" if !banned.contains(Banned::SIX) => b.put(b"6"),
+            "deux" | "deuxième" if !blocked.contains(Excludable::DEUX) => b.put(b"2"),
+            "trois" | "troisième" if !blocked.contains(Excludable::TROIS) => b.put(b"3"),
+            "quatre" | "quatrième" if !blocked.contains(Excludable::QUATRE) => b.put(b"4"),
+            "cinq" | "cinquième" if !blocked.contains(Excludable::CINQ) => b.put(b"5"),
+            "six" | "sixième" if !blocked.contains(Excludable::SIX) => b.put(b"6"),
             "sept" | "septième" => b.put(b"7"),
             "huit" | "huitième" => b.put(b"8"),
             "neuf" | "neuvième" => b.put(b"9"),
             "dix" | "dixième" => {
-                to_ban = Banned::UN_SIX;
+                to_block = Excludable::UN_SIX;
                 match b.peek(2) {
                     b"60" => b.fput(b"70"),
                     b"80" => b.fput(b"90"),
@@ -149,7 +149,7 @@ impl LangInterpretor for French {
         };
         let marker = self.get_morph_marker(num_func);
         if status.is_ok() {
-            b.flags = to_ban.bits();
+            b.flags = to_block.bits();
             if !marker.is_none() {
                 b.marker = marker;
                 b.freeze();
