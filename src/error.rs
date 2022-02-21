@@ -10,5 +10,5 @@ pub enum Error {
     /// The number being decoded is incomplete and we need more data
     Incomplete,
     /// The currently decoded number is complete and we don't accept new data
-    Frozen,
+    Frozen
 }

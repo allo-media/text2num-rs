@@ -1,6 +1,8 @@
 /// French number interpretor.
 ///
 /// It supports regional variants.
+use bitflags::bitflags;
+
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -32,6 +34,20 @@ impl French {
     }
 }
 
+bitflags! {
+    /// Words that can be temporarily banned because of linguistic features.
+    ///(logical, numerical feature inconsistencies are already taken care of by DigitString)
+    struct Banned: u64 {
+        const UN = 1;
+        const DEUX = 2;
+        const TROIS = 4;
+        const QUATRE = 8;
+        const CINQ = 16;
+        const SIX = 32;
+        const UN_SIX = 63;// all previous OR'ed
+    }
+}
+
 impl LangInterpretor for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In French, numbers can be compounded to form a group with "-"
@@ -39,6 +55,7 @@ impl LangInterpretor for French {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
                     b.put(&ds)?;
+                    b.flags = ds.flags;
                     if ds.marker.is_ordinal() {
                         b.marker = ds.marker;
                         b.freeze()
@@ -48,27 +65,31 @@ impl LangInterpretor for French {
                 Err(err) => Err(err),
             };
         }
+        let banned = Banned::from_bits_truncate(b.flags);
+        let mut to_ban = Banned::empty();
+
         let lemma = lemmatize(num_func);
         let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" | "premier" | "première"
-                if !matches!(b.peek(2), b"10" | b"70" | b"90") =>
-            {
+            "un" | "unième" | "premier" | "première" if !banned.contains(Banned::UN) => {
                 b.put(b"1")
             }
-            "deux" | "deuxième" if b.peek(2) != b"10" => b.put(b"2"),
-            "trois" | "troisième" if b.peek(2) != b"10" => b.put(b"3"),
-            "quatre" | "quatrième" if b.peek(2) != b"10" => b.put(b"4"),
-            "cinq" | "cinquième" if b.peek(2) != b"10" => b.put(b"5"),
-            "six" | "sixième" if b.peek(2) != b"10" => b.put(b"6"),
+            "deux" | "deuxième" if !banned.contains(Banned::DEUX) => b.put(b"2"),
+            "trois" | "troisième" if !banned.contains(Banned::TROIS) => b.put(b"3"),
+            "quatre" | "quatrième" if !banned.contains(Banned::QUATRE) => b.put(b"4"),
+            "cinq" | "cinquième" if !banned.contains(Banned::CINQ) => b.put(b"5"),
+            "six" | "sixième" if !banned.contains(Banned::SIX) => b.put(b"6"),
             "sept" | "septième" => b.put(b"7"),
             "huit" | "huitième" => b.put(b"8"),
             "neuf" | "neuvième" => b.put(b"9"),
-            "dix" | "dixième" => match b.peek(2) {
-                b"60" => b.fput(b"70"),
-                b"80" => b.fput(b"90"),
-                _ => b.put(b"10"),
-            },
+            "dix" | "dixième" => {
+                to_ban = Banned::UN_SIX;
+                match b.peek(2) {
+                    b"60" => b.fput(b"70"),
+                    b"80" => b.fput(b"90"),
+                    _ => b.put(b"10"),
+                }
+            }
             "onze" | "onzième" => match b.peek(2) {
                 b"60" => b.fput(b"71"),
                 b"80" => b.fput(b"91"),
@@ -127,9 +148,14 @@ impl LangInterpretor for French {
             _ => Err(Error::NaN),
         };
         let marker = self.get_morph_marker(num_func);
-        if status.is_ok() && !marker.is_none() {
-            b.marker = marker;
-            b.freeze();
+        if status.is_ok() {
+            b.flags = to_ban.bits();
+            if !marker.is_none() {
+                b.marker = marker;
+                b.freeze();
+            }
+        } else {
+            b.flags = 0
         }
         status
     }
@@ -325,6 +351,8 @@ mod tests {
         );
         assert_replace_numbers!("Vingt et un, trente et un.", "21, 31.");
         assert_replace_numbers!("quatre-vingt-dix un, soixante-dix un", "90 1, 70 1");
+        assert_replace_numbers!("quatre-vingt-dix cinq, soixante-dix cinq", "90 5, 70 5");
+        assert_replace_numbers!("nonante cinq, septante cinq", "95, 75");
     }
 
     #[test]
