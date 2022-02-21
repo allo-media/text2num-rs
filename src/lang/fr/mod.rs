@@ -51,7 +51,11 @@ impl LangInterpretor for French {
         let lemma = lemmatize(num_func);
         let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" | "premier" | "première" if b.peek(2) != b"10" => b.put(b"1"),
+            "un" | "unième" | "premier" | "première"
+                if !matches!(b.peek(2), b"10" | b"70" | b"90") =>
+            {
+                b.put(b"1")
+            }
             "deux" | "deuxième" if b.peek(2) != b"10" => b.put(b"2"),
             "trois" | "troisième" if b.peek(2) != b"10" => b.put(b"3"),
             "quatre" | "quatrième" if b.peek(2) != b"10" => b.put(b"4"),
@@ -320,6 +324,7 @@ mod tests {
             "1, 2, 3, 4, 20, 15."
         );
         assert_replace_numbers!("Vingt et un, trente et un.", "21, 31.");
+        assert_replace_numbers!("quatre-vingt-dix un, soixante-dix un", "90 1, 70 1");
     }
 
     #[test]
