@@ -123,15 +123,15 @@ pub enum Language {
 
 impl Language {
     pub fn french() -> Self {
-        Language::French(French {})
+        Language::French(French::default())
     }
 
     pub fn english() -> Self {
-        Language::English(English {})
+        Language::English(English::default())
     }
 
     pub fn spanish() -> Self {
-        Language::Spanish(Spanish {})
+        Language::Spanish(Spanish::default())
     }
 }
 

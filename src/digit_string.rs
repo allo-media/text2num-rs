@@ -13,6 +13,8 @@ pub struct DigitString {
     buffer: Vec<u8>,
     leading_zeroes: usize,
     frozen: bool,
+    /// Decoder state if any
+    pub flags: u64,
     pub marker: MorphologicalMarker,
 }
 
@@ -26,6 +28,7 @@ impl DigitString {
             buffer: Vec::with_capacity(4),
             leading_zeroes: 0,
             frozen: false,
+            flags: 0,
             marker: MorphologicalMarker::None,
         }
     }
