@@ -140,7 +140,14 @@ impl LangInterpretor for French {
                     Err(Error::Overlap)
                 }
             }
-            "mille" | "mil" | "millième" => b.shift(3),
+            "mille" | "mil" | "millième" => {
+                let peek = b.peek(2);
+                if peek == b"1" {
+                    Err(Error::Overlap)
+                } else {
+                    b.shift(3)
+                }
+            }
             "million" | "millionième" => b.shift(6),
             "milliard" | "milliardième" => b.shift(9),
             "et" if b.len() >= 2 => Err(Error::Incomplete),
@@ -361,6 +368,7 @@ mod tests {
             "zéro neuf soixante zéro six douze vingt et un",
             "09 60 06 12 21"
         );
+        assert_replace_numbers!("zéro un mille neuf cent quatre-vingt-dix", "01 1990");
     }
 
     #[test]
