@@ -134,7 +134,7 @@ impl LangInterpretor for French {
             "nonante" | "nonantième" => b.put(b"90"),
             "cent" | "centième" => {
                 let peek = b.peek(2);
-                if peek.len() == 1 || peek < b"20" {
+                if (peek.len() == 1 || peek < b"20") && peek != b"1" {
                     b.shift(2)
                 } else {
                     Err(Error::Overlap)
@@ -369,6 +369,7 @@ mod tests {
             "09 60 06 12 21"
         );
         assert_replace_numbers!("zéro un mille neuf cent quatre-vingt-dix", "01 1990");
+        assert_replace_numbers!("zéro un cent", "01 100");
     }
 
     #[test]
