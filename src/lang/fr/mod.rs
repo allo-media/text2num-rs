@@ -20,13 +20,8 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
+#[derive(Default)]
 pub struct French {}
-
-impl Default for French {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl French {
     pub fn new() -> Self {
@@ -134,13 +129,20 @@ impl LangInterpretor for French {
             "nonante" | "nonantième" => b.put(b"90"),
             "cent" | "centième" => {
                 let peek = b.peek(2);
-                if peek.len() == 1 || peek < b"20" {
+                if (peek.len() == 1 || peek < b"20") && peek != b"1" {
                     b.shift(2)
                 } else {
                     Err(Error::Overlap)
                 }
             }
-            "mille" | "mil" | "millième" => b.shift(3),
+            "mille" | "mil" | "millième" => {
+                let peek = b.peek(2);
+                if peek == b"1" {
+                    Err(Error::Overlap)
+                } else {
+                    b.shift(3)
+                }
+            }
             "million" | "millionième" => b.shift(6),
             "milliard" | "milliardième" => b.shift(9),
             "et" if b.len() >= 2 => Err(Error::Incomplete),
@@ -181,8 +183,8 @@ impl LangInterpretor for French {
     fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
-        let val = format!("{}.{}", sint, sdec).parse().unwrap();
-        (format!("{},{}", sint, sdec), val)
+        let val = format!("{sint}.{sdec}").parse().unwrap();
+        (format!("{sint},{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
@@ -361,6 +363,8 @@ mod tests {
             "zéro neuf soixante zéro six douze vingt et un",
             "09 60 06 12 21"
         );
+        assert_replace_numbers!("zéro un mille neuf cent quatre-vingt-dix", "01 1990");
+        assert_replace_numbers!("zéro un cent", "01 100");
     }
 
     #[test]
