@@ -18,13 +18,8 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
+#[derive(Default)]
 pub struct Spanish {}
-
-impl Default for Spanish {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl Spanish {
     pub fn new() -> Self {
@@ -130,8 +125,8 @@ impl LangInterpretor for Spanish {
         let repr = b.to_string();
         let val: f64 = repr.parse().unwrap();
         match b.marker {
-            MorphologicalMarker::Fraction(_) => (format!("1/{}", repr), val.recip()),
-            MorphologicalMarker::Ordinal(marker) => (format!("{}{}", repr, marker), val),
+            MorphologicalMarker::Fraction(_) => (format!("1/{repr}"), val.recip()),
+            MorphologicalMarker::Ordinal(marker) => (format!("{repr}{marker}"), val),
             MorphologicalMarker::None => (repr, val),
         }
     }
@@ -139,8 +134,8 @@ impl LangInterpretor for Spanish {
     fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
-        let val = format!("{}.{}", sint, sdec).parse().unwrap();
-        (format!("{},{}", sint, sdec), val)
+        let val = format!("{sint}.{sdec}").parse().unwrap();
+        (format!("{sint},{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {

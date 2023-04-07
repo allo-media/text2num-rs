@@ -20,13 +20,8 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
+#[derive(Default)]
 pub struct French {}
-
-impl Default for French {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl French {
     pub fn new() -> Self {
@@ -188,8 +183,8 @@ impl LangInterpretor for French {
     fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
-        let val = format!("{}.{}", sint, sdec).parse().unwrap();
-        (format!("{},{}", sint, sdec), val)
+        let val = format!("{sint}.{sdec}").parse().unwrap();
+        (format!("{sint},{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {

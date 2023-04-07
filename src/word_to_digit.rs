@@ -413,11 +413,11 @@ The `threshold` drives the *lone number* policy: if a number is isolated — tha
 surrounded by significant non-number words — and lower than `threshold`, then it
 is ignored.
 */
-pub fn find_numbers_iter<'a, L, T, I>(
+pub fn find_numbers_iter<L, T, I>(
     input: I,
-    lang: &'a L,
+    lang: &L,
     threshold: f64,
-) -> FindNumbers<'a, L, T, Enumerate<I>>
+) -> FindNumbers<'_, L, T, Enumerate<I>>
 where
     L: LangInterpretor,
     T: Token,
