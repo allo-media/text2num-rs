@@ -68,7 +68,10 @@ impl DigitString {
         }
         let positions = digits.len();
         match self.buffer.len() {
-            0 => Ok(self.buffer.extend_from_slice(digits)),
+            0 => {
+                self.buffer.extend_from_slice(digits);
+                Ok(())
+            }
             l if l < positions => Err(Error::Overlap),
             l if all_zeros(&self.buffer[(l - positions)..]) => {
                 self.buffer[(l - positions)..].copy_from_slice(digits);
@@ -91,7 +94,10 @@ impl DigitString {
         }
         let positions = digits.len();
         match self.buffer.len() {
-            0 => Ok(self.buffer.extend_from_slice(digits)),
+            0 => {
+                self.buffer.extend_from_slice(digits);
+                Ok(())
+            }
             mut l => {
                 if l < positions {
                     self.buffer.resize(positions, b'0');
@@ -134,7 +140,10 @@ impl DigitString {
         }
         let l = self.buffer.len();
         if l <= positions {
-            return Ok(self.buffer.resize(l + positions, b'0'));
+            return {
+                self.buffer.resize(l + positions, b'0');
+                Ok(())
+            };
         }
         let mut padding_zeroes = self.buffer[(l - positions)..]
             .iter()

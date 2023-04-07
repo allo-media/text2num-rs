@@ -4,7 +4,7 @@ pub struct Tokenize<'a> {
     chars: std::iter::Peekable<std::str::CharIndices<'a>>,
 }
 
-pub fn tokenize<'a>(source: &'a str) -> Tokenize<'a> {
+pub fn tokenize(source: &str) -> Tokenize<'_> {
     Tokenize::new(source)
 }
 
