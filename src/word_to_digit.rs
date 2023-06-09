@@ -229,7 +229,7 @@ impl NumTracker {
                 self.matches.push_back(prev);
             }
             self.matches.push_back(occurence);
-        } else if occurence.text.len() > 1 && !is_ordinal || value > self.threshold {
+        } else if occurence.text.len() > 1 && !is_ordinal || value >= self.threshold {
             self.matches.push_back(occurence);
             self.on_hold.take();
         } else {
@@ -378,7 +378,7 @@ where
     }
 }
 
-/// Find spelled numbers (including decimal numbers) in the `text`.
+/// Find spelled numbers (including decimal numbers) in the input token stream.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 fn track_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
     input: I,
@@ -460,6 +460,17 @@ mod tests {
     use crate::lang::Language;
 
     #[test]
+    fn test_word_to_digits_parser_zero() {
+        let fr = Language::french();
+        let mut parser = WordToDigitParser::new(&fr);
+        parser.push("zéro").unwrap();
+        assert!(parser.has_number());
+        let (repr, val) = parser.string_and_value();
+        assert_eq!(repr, "0");
+        assert_eq!(val, 0.0);
+    }
+
+    #[test]
     fn test_grouping() {
         let fr = Language::french();
         let wyget = replace_numbers("zéro zéro trente quatre-vingt-dix-sept", &fr, 10.0);
@@ -480,6 +491,24 @@ mod tests {
         );
         dbg!(&ocs);
         assert!(ocs.is_empty());
+    }
+
+    #[test]
+    fn test_find_all_isolated_single() {
+        let fr = Language::french();
+        let ocs = find_numbers(
+            "c'est zéro"
+                .split_whitespace()
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>()
+                .iter(),
+            &fr,
+            0.0,
+        );
+        dbg!(&ocs);
+        assert_eq!(ocs.len(), 1);
+        assert_eq!(ocs[0].text, "0");
+        assert_eq!(ocs[0].value, 0.0);
     }
 
     #[test]

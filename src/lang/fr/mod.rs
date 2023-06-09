@@ -377,6 +377,7 @@ mod tests {
         assert_replace_numbers!("treize mille zéro quatre-vingt-dix", "13000 090");
         assert_replace_numbers!("treize mille zéro quatre-vingts", "13000 080");
         assert_replace_numbers!("zéro", "zéro");
+        assert_replace_all_numbers!("zéro", "0");
         assert_replace_numbers!("zéro cinq", "05");
         assert_replace_numbers!("zéro, cinq", "0, 5");
         assert_replace_numbers!("Votre service est zéro !", "Votre service est zéro !");
