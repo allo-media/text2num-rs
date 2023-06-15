@@ -194,28 +194,34 @@ enum MatchKind {
     None,
 }
 
-#[derive(Debug)]
-struct NumTracker {
-    matches: VecDeque<Occurence>,
-    on_hold: Option<Occurence>,
-    threshold: f64,
-    last_contiguous_match: MatchKind,
-    match_start: usize,
-    match_end: usize,
-}
-
 impl MatchKind {
     fn is_none(&self) -> bool {
         *self == MatchKind::None
     }
 }
 
+pub struct ForgetIfIsolate(bool);
+
+impl ForgetIfIsolate {
+    pub fn is_true(&self) -> bool {
+        self.0
+    }
+}
+
+#[derive(Debug)]
+struct NumTracker {
+    matches: VecDeque<Occurence>,
+    on_hold: Option<Occurence>,
+    last_contiguous_match: MatchKind,
+    match_start: usize,
+    match_end: usize,
+}
+
 impl NumTracker {
-    fn new(threshold: f64) -> Self {
+    fn new() -> Self {
         Self {
             matches: VecDeque::with_capacity(2),
             on_hold: None,
-            threshold,
             last_contiguous_match: MatchKind::None,
             match_start: 0,
             match_end: 0,
@@ -229,7 +235,13 @@ impl NumTracker {
         self.match_end = pos + 1;
     }
 
-    fn number_end(&mut self, is_ordinal: bool, digits: String, value: f64) {
+    fn number_end(
+        &mut self,
+        is_ordinal: bool,
+        digits: String,
+        value: f64,
+        forget_if_isolate: ForgetIfIsolate,
+    ) {
         let occurence = Occurence {
             start: self.match_start,
             end: self.match_end,
@@ -250,24 +262,19 @@ impl NumTracker {
                 self.matches.push_back(prev);
             }
             self.matches.push_back(occurence);
-        } else if occurence.text.len() > 1 && !is_ordinal || value >= self.threshold {
+        } else if forget_if_isolate.is_true() {
+            self.on_hold.replace(occurence);
+        } else {
             self.matches.push_back(occurence);
             self.on_hold.take();
-        } else {
-            self.on_hold.replace(occurence);
         }
         //
         self.last_contiguous_match = kind;
         self.match_start = self.match_end;
     }
 
-    fn outside_number<L: LangInterpretor, T: Token>(&mut self, token: &T, lang: &L) {
-        let text = token.text();
-        if !(text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
-            || lang.is_linking(text))
-        {
-            self.last_contiguous_match = MatchKind::None
-        };
+    fn sequence_breaker(&mut self) {
+        self.last_contiguous_match = MatchKind::None
     }
 
     fn pop(&mut self) -> Option<Occurence> {
@@ -306,6 +313,7 @@ where
     parser: WordToDigitParser<'a, L>,
     tracker: NumTracker,
     previous: Option<T>,
+    threshold: f64,
 }
 
 impl<'a, L, T, I> FindNumbers<'a, L, T, I>
@@ -319,8 +327,9 @@ where
             lang,
             input,
             parser: WordToDigitParser::new(lang),
-            tracker: NumTracker::new(threshold),
+            tracker: NumTracker::new(),
             previous: None,
+            threshold,
         }
     }
 
@@ -346,27 +355,43 @@ where
             // First failed parse after one or more successful ones:
             // we reached the end of a number.
             Err(_) if self.parser.has_number() => {
-                let is_ordinal = self.parser.is_ordinal();
-                let (digits, value) = self.parser.string_and_value();
-                self.tracker.number_end(is_ordinal, digits, value);
+                self.number_end();
                 // The end of that match may be the start of another
                 if self.parser.push(&lo_token).is_ok() {
                     self.tracker.number_advanced(pos);
                 } else {
-                    self.tracker.outside_number(&token, self.lang)
+                    self.outside_number(&token)
                 }
             }
-            Err(_) => self.tracker.outside_number(&token, self.lang),
+            Err(_) => self.outside_number(&token),
         }
         self.previous.replace(token);
     }
 
     fn finalize(&mut self) {
         if self.parser.has_number() {
-            let is_ordinal = self.parser.is_ordinal();
-            let (digits, value) = self.parser.string_and_value();
-            self.tracker.number_end(is_ordinal, digits, value);
+            self.number_end()
         }
+    }
+
+    fn number_end(&mut self) {
+        let is_ordinal = self.parser.is_ordinal();
+        let (digits, value) = self.parser.string_and_value();
+        let forget_if_isolate = ForgetIfIsolate(
+            (digits.len() == 1 || is_ordinal) && value < self.threshold
+                || self.lang.is_ambiguous(&digits),
+        );
+        self.tracker
+            .number_end(is_ordinal, digits, value, forget_if_isolate);
+    }
+
+    fn outside_number(&mut self, token: &T) {
+        let text = token.text();
+        if !(text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
+            || self.lang.is_linking(text))
+        {
+            self.tracker.sequence_breaker()
+        };
     }
 
     fn track_numbers(mut self) -> NumTracker {
