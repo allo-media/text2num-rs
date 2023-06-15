@@ -200,14 +200,6 @@ impl MatchKind {
     }
 }
 
-pub struct ForgetIfIsolate(bool);
-
-impl ForgetIfIsolate {
-    pub fn is_true(&self) -> bool {
-        self.0
-    }
-}
-
 #[derive(Debug)]
 struct NumTracker {
     matches: VecDeque<Occurence>,
@@ -240,7 +232,7 @@ impl NumTracker {
         is_ordinal: bool,
         digits: String,
         value: f64,
-        forget_if_isolate: ForgetIfIsolate,
+        forget_if_isolate: bool,
     ) {
         let occurence = Occurence {
             start: self.match_start,
@@ -262,7 +254,7 @@ impl NumTracker {
                 self.matches.push_back(prev);
             }
             self.matches.push_back(occurence);
-        } else if forget_if_isolate.is_true() {
+        } else if forget_if_isolate {
             self.on_hold.replace(occurence);
         } else {
             self.matches.push_back(occurence);
@@ -377,10 +369,8 @@ where
     fn number_end(&mut self) {
         let is_ordinal = self.parser.is_ordinal();
         let (digits, value) = self.parser.string_and_value();
-        let forget_if_isolate = ForgetIfIsolate(
-            (digits.len() == 1 || is_ordinal) && value < self.threshold
-                || self.lang.is_ambiguous(&digits),
-        );
+        let forget_if_isolate = (digits.len() == 1 || is_ordinal) && value < self.threshold
+            || self.lang.is_ambiguous(&digits);
         self.tracker
             .number_end(is_ordinal, digits, value, forget_if_isolate);
     }
