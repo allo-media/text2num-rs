@@ -95,6 +95,8 @@ pub trait LangInterpretor {
     /// In the opposite, in the sentence "*two pigs and three chickens*", "*pigs*" and "*chickens*" are important words
     /// that separate unrelated numbers. So the method would return `false` for them.
     fn is_linking(&self, word: &str) -> bool;
+    /// In some languages, numbers can be homonyms to other words
+    fn is_ambiguous(&self, number: &str) -> bool;
     /// Process the `group` as all or nothing.
     fn exec_group<'a, I: Iterator<Item = &'a str>>(&self, group: I) -> Result<DigitString, Error> {
         let mut b = DigitString::new();
@@ -186,6 +188,14 @@ macro_rules! delegate {
             match self {
                 $(
                     Language::$variant(l) => l.is_linking(word),
+                )*
+            }
+        }
+
+        fn is_ambiguous(&self, number: &str) -> bool {
+            match self {
+                $(
+                    Language::$variant(l) => l.is_ambiguous(number),
                 )*
             }
         }
