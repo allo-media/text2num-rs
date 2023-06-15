@@ -208,6 +208,10 @@ impl LangInterpretor for French {
     fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
+
+    fn is_ambiguous(&self, number: &str) -> bool {
+        number == "9"
+    }
 }
 
 #[cfg(test)]
@@ -430,7 +434,10 @@ mod tests {
             "Mon premier arrive avant mon deuxième et mon troisième",
             "Mon 1er arrive avant mon 2ème et mon 3ème"
         );
+        assert_replace_numbers!("Un douzième essai", "Un 12ème essai");
         assert_replace_numbers!("Premier, deuxième, troisième", "1er, 2ème, 3ème");
+        assert_replace_all_numbers!("le logement neuf", "le logement neuf");
+        assert_replace_all_numbers!("le logement neuf deux sept", "le logement 9 2 7");
     }
 
     #[test]
