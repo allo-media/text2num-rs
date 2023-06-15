@@ -187,14 +187,27 @@ pub struct Occurence {
     pub is_ordinal: bool,
 }
 
+#[derive(Debug, PartialEq)]
+enum MatchKind {
+    Cardinal,
+    Ordinal,
+    None,
+}
+
 #[derive(Debug)]
 struct NumTracker {
     matches: VecDeque<Occurence>,
     on_hold: Option<Occurence>,
     threshold: f64,
-    last_match_is_contiguous: bool,
+    last_contiguous_match: MatchKind,
     match_start: usize,
     match_end: usize,
+}
+
+impl MatchKind {
+    fn is_none(&self) -> bool {
+        *self == MatchKind::None
+    }
 }
 
 impl NumTracker {
@@ -203,7 +216,7 @@ impl NumTracker {
             matches: VecDeque::with_capacity(2),
             on_hold: None,
             threshold,
-            last_match_is_contiguous: false,
+            last_contiguous_match: MatchKind::None,
             match_start: 0,
             match_end: 0,
         }
@@ -224,7 +237,15 @@ impl NumTracker {
             is_ordinal,
             value,
         };
-        if self.last_match_is_contiguous {
+        let kind = if is_ordinal {
+            MatchKind::Ordinal
+        } else {
+            MatchKind::Cardinal
+        };
+        if self.last_contiguous_match != kind {
+            self.last_contiguous_match = MatchKind::None;
+        }
+        if !self.last_contiguous_match.is_none() {
             if let Some(prev) = self.on_hold.take() {
                 self.matches.push_back(prev);
             }
@@ -236,15 +257,17 @@ impl NumTracker {
             self.on_hold.replace(occurence);
         }
         //
-        self.last_match_is_contiguous = true;
+        self.last_contiguous_match = kind;
         self.match_start = self.match_end;
     }
 
     fn outside_number<L: LangInterpretor, T: Token>(&mut self, token: &T, lang: &L) {
         let text = token.text();
-        self.last_match_is_contiguous = self.last_match_is_contiguous
-            && (text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
-                || lang.is_linking(text));
+        if !(text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
+            || lang.is_linking(text))
+        {
+            self.last_contiguous_match = MatchKind::None
+        };
     }
 
     fn pop(&mut self) -> Option<Occurence> {

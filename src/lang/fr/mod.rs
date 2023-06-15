@@ -430,6 +430,7 @@ mod tests {
             "Mon premier arrive avant mon deuxième et mon troisième",
             "Mon 1er arrive avant mon 2ème et mon 3ème"
         );
+        assert_replace_numbers!("Un douzième essai", "Un 12ème essai");
         assert_replace_numbers!("Premier, deuxième, troisième", "1er, 2ème, 3ème");
     }
 
