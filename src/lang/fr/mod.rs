@@ -66,9 +66,8 @@ impl LangInterpretor for French {
         let lemma = lemmatize(num_func);
         let status = match lemmatize(lemma) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" | "premier" | "première" if !blocked.contains(Excludable::UN) => {
-                b.put(b"1")
-            }
+            "un" | "unième" if !blocked.contains(Excludable::UN) => b.put(b"1"),
+            "premier" | "première" if b.is_empty() => b.put(b"1"),
             "deux" | "deuxième" if !blocked.contains(Excludable::DEUX) => b.put(b"2"),
             "trois" | "troisième" if !blocked.contains(Excludable::TROIS) => b.put(b"3"),
             "quatre" | "quatrième" if !blocked.contains(Excludable::QUATRE) => b.put(b"4"),
@@ -279,6 +278,7 @@ mod tests {
         assert_text2digits!("quinze", "15");
 
         assert_text2digits!("soixante quinze mille", "75000");
+        assert_text2digits!("un milliard vingt-cinq millions", "1025000000");
     }
 
     #[test]
@@ -395,6 +395,9 @@ mod tests {
         );
         assert_replace_numbers!("première seconde", "première seconde");
         assert_replace_numbers!("premier second", "premier second");
+        assert_replace_numbers!("cinq cent unième", "501ème");
+        assert_replace_numbers!("cinq cent premiers", "500 premiers");
+        assert_replace_numbers!("cinq cent premier", "500 premier");
     }
 
     #[test]
@@ -436,6 +439,10 @@ mod tests {
         );
         assert_replace_numbers!("Un douzième essai", "Un 12ème essai");
         assert_replace_numbers!("Premier, deuxième, troisième", "1er, 2ème, 3ème");
+        assert_replace_numbers!("un peu d'eau", "un peu d'eau");
+        assert_replace_numbers!("un peu moins", "un peu moins");
+        assert_replace_numbers!("un peu plus", "un peu plus");
+
         assert_replace_all_numbers!("le logement neuf", "le logement neuf");
         assert_replace_all_numbers!("le logement neuf deux sept", "le logement 9 2 7");
     }
