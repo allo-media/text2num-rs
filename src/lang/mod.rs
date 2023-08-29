@@ -94,6 +94,7 @@ pub trait LangInterpretor {
     /// and "*uh*" is not significant, so this method would return `true` for them.
     /// In the opposite, in the sentence "*two pigs and three chickens*", "*pigs*" and "*chickens*" are important words
     /// that separate unrelated numbers. So the method would return `false` for them.
+    /// This function is used to find isolate numbers.
     fn is_linking(&self, word: &str) -> bool;
     /// In some languages, numbers can be homonyms to other words
     fn is_ambiguous(&self, number: &str) -> bool;

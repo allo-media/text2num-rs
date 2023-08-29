@@ -217,6 +217,7 @@ mod tests {
         assert_text2digits!("thirty-five thousands", "35000");
         assert_text2digits!("thousand nine hundred twenty", "1920");
         assert_text2digits!("thousand and nine hundred twenty", "1920");
+        assert_text2digits!("one billion twenty-five millions", "1025000000");
     }
 
     #[test]
@@ -327,6 +328,7 @@ mod tests {
             "1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th, 9th, 10th."
         );
         assert_replace_numbers!("Twenty seconds", "20 seconds");
+        assert_replace_numbers!("five hundred first", "501st");
     }
 
     #[test]
