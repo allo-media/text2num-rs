@@ -1,6 +1,6 @@
 [package]
 name = "text2num"
-version = "2.1.3"
+version = "2.1.4"
 authors = ["Allo-Media <contact@allo-media.fr>"]
 edition = "2021"
 license = "MIT"
