@@ -74,7 +74,7 @@ impl LangInterpretor for English {
             "ninety" | "ninetieth" => b.put(b"90"),
             "hundred" | "hundredth" => {
                 let peek = b.peek(2);
-                if peek.len() == 1 || peek < b"20" {
+                if peek.len() == 1 || peek < b"99" {
                     b.shift(2)
                 } else {
                     Err(Error::Overlap)
@@ -229,6 +229,8 @@ mod tests {
     #[test]
     fn test_centuries() {
         assert_text2digits!("nineteen hundred seventy-three", "1973");
+        assert_text2digits!("forty five hundred thirty eight", "4538");
+        assert_text2digits!("sixty hundreds", "6000");
         // assert_text2digits!("nineteen seventy-three", "1973");
     }
 
@@ -263,7 +265,7 @@ mod tests {
     fn test_invalid() {
         assert_invalid!("thousand thousand two hundreds");
         assert_invalid!("sixty fifteen");
-        assert_invalid!("sixty hundred");
+        assert_invalid!("hundred hundreds");
         assert_invalid!("ten five");
         assert_invalid!("twentieth two");
         assert_invalid!("ten oneths");
@@ -309,6 +311,7 @@ mod tests {
         assert_replace_numbers!("five zero zero", "5 00");
         assert_replace_numbers!("zero", "zero");
         assert_replace_numbers!("o", "o");
+        assert_replace_all_numbers!("zero", "0");
         assert_replace_numbers!(
             "zero nine sixty zero six twelve twenty-one",
             "09 60 06 12 21"
