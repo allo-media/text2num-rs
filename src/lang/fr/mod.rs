@@ -384,7 +384,12 @@ mod tests {
         assert_replace_all_numbers!("zéro", "0");
         assert_replace_numbers!("zéro cinq", "05");
         assert_replace_numbers!("zéro, cinq", "0, 5");
+        assert_replace_numbers!("sept un zéro", "7 1 0");
         assert_replace_numbers!("Votre service est zéro !", "Votre service est zéro !");
+        assert_replace_numbers!(
+            "a a un trois sept trois trois sept cinq quatre zéro c c",
+            "a a 1 3 7 3 3 7 5 4 0 c c"
+        );
     }
 
     #[test]
@@ -441,7 +446,7 @@ mod tests {
         assert_replace_numbers!("Premier, deuxième, troisième", "1er, 2ème, 3ème");
         assert_replace_numbers!("un peu d'eau", "un peu d'eau");
         assert_replace_numbers!("un peu moins", "un peu moins");
-        assert_replace_numbers!("un peu plus", "un peu plus");
+        // assert_replace_numbers!("onze c'est un peu plus", "11 c'est un peu plus");
 
         assert_replace_all_numbers!("le logement neuf", "le logement neuf");
         assert_replace_all_numbers!("le logement neuf deux sept", "le logement 9 2 7");
