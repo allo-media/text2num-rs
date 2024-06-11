@@ -63,8 +63,7 @@ impl LangInterpretor for French {
         let blocked = Excludable::from_bits_truncate(b.flags);
         let mut to_block = Excludable::empty();
 
-        let lemma = lemmatize(num_func);
-        let status = match lemmatize(lemma) {
+        let status = match lemmatize(num_func) {
             "zéro" => b.put(b"0"),
             "un" | "unième" if !blocked.contains(Excludable::UN) => b.put(b"1"),
             "premier" | "première" if b.is_empty() => b.put(b"1"),

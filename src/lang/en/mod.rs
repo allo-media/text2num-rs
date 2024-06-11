@@ -43,7 +43,7 @@ impl LangInterpretor for English {
             };
         }
         let lemma = lemmatize(num_func);
-        let status = match lemmatize(lemma) {
+        let status = match lemma {
             "zero" | "o" | "nought" => b.put(b"0"),
             "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
             "two" | "second" if b.peek(2) != b"10" => b.put(b"2"),
