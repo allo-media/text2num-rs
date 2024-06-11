@@ -1,6 +1,6 @@
 //! DigitBuilder
 //!
-//! Build numeric representation using only elementary operations ensuring a
+//! Build numeric (base 10) representation using only elementary operations ensuring a
 //! valid construction at every step.
 
 use std::ops::Deref;
