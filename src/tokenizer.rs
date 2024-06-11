@@ -1,3 +1,10 @@
+//! Some tokenizers
+use daachorse::{
+    charwise::iter::LestmostFindIterator, errors::Result, CharwiseDoubleArrayAhoCorasick,
+    CharwiseDoubleArrayAhoCorasickBuilder, Match, MatchKind,
+};
+
+/// Plain text tokenizer on word boundaries.
 #[derive(Debug)]
 pub struct Tokenize<'a> {
     source: &'a str,
@@ -60,6 +67,74 @@ impl<'a> Iterator for Tokenize<'a> {
     }
 }
 
+pub struct WordSplitIterator<'a> {
+    source: &'a str,
+    matches: LestmostFindIterator<'a, &'a str, usize>,
+    last_match: Option<Match<usize>>,
+    cursor: usize,
+}
+
+impl<'a> WordSplitIterator<'a> {
+    fn new(source: &'a str, matches: LestmostFindIterator<'a, &'a str, usize>) -> Self {
+        Self {
+            source,
+            matches,
+            last_match: None,
+            cursor: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for WordSplitIterator<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(m) = self.last_match.take() {
+            self.cursor = m.end();
+            Some(&self.source[m.start()..self.cursor])
+        } else if let Some(m) = self.matches.next() {
+            let s = m.start();
+            self.last_match.replace(m);
+            if self.cursor != s {
+                Some(&self.source[self.cursor..s])
+            } else {
+                self.next()
+            }
+        } else if self.cursor < self.source.len() {
+            let last = &self.source[self.cursor..];
+            self.cursor = self.source.len();
+            Some(last)
+        } else {
+            None
+        }
+    }
+}
+
+/// Word splitter on patterns, including the match patterns.
+pub struct WordSplitter {
+    engine: CharwiseDoubleArrayAhoCorasick<usize>,
+}
+
+impl WordSplitter {
+    pub fn new<I, P>(patterns: I) -> Result<Self>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<str>,
+    {
+        CharwiseDoubleArrayAhoCorasickBuilder::new()
+            .match_kind(MatchKind::LeftmostLongest)
+            .build(patterns)
+            .map(|engine| Self { engine })
+    }
+
+    pub fn split<'a, 'b>(&'b self, word: &'a str) -> WordSplitIterator<'a>
+    where
+        'b: 'a,
+    {
+        WordSplitIterator::new(word, self.engine.leftmost_find_iter(word))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -78,5 +153,26 @@ mod tests {
         assert_eq!(tokens[5], ": ");
         assert_eq!(tokens[6], "hello");
         assert_eq!(tokens[7], "!");
+    }
+
+    #[test]
+    fn test_word_splitter() {
+        let src = "tausendfünfhundertzweiunddreißig";
+        let german_splitter = WordSplitter::new(&[
+            "billion",
+            "milliarde",
+            "millionen",
+            "million",
+            "tausend",
+            "hundert",
+            "und",
+        ])
+        .unwrap();
+        let tokens: Vec<&str> = german_splitter.split(src).collect();
+        dbg!(&tokens);
+        assert_eq!(
+            tokens,
+            ["tausend", "fünf", "hundert", "zwei", "und", "dreißig"]
+        );
     }
 }
