@@ -1,4 +1,4 @@
-/// Spanish number interpretor
+//! Spanish number interpretor
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -98,7 +98,7 @@ impl LangInterpretor for Spanish {
             "seteciento" | "setecienta" | "septingentésimo" | "septingentésima" => b.put(b"700"),
             "ochociento" | "ochocienta" | "octingentésimo" | "octingentésima" => b.put(b"800"),
             "noveciento" | "novecienta" | "noningentésimo" | "noningentésima" => b.put(b"900"),
-            "mil" | "milésimo" | "milésima" => b.shift(3),
+            "mil" | "milésimo" | "milésima" if b.is_range_free(3, 5) => b.shift(3),
             "millon" | "millón" | "millonésimo" | "millonésima" => b.shift(6),
             "y" if b.len() >= 2 => Err(Error::Incomplete),
 

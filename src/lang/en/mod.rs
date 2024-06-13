@@ -1,4 +1,4 @@
-// English number interpretor
+//! English number interpretor
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
@@ -32,6 +32,11 @@ impl LangInterpretor for English {
         if num_func.contains('-') {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
+                    // put alone would allow "14000" inside "200000"
+                    if ds.len() > 3 && ds.len() <= 6 && !b.is_range_free(3, 5) {
+                        return Err(Error::Overlap);
+                    }
+
                     b.put(&ds)?;
                     if ds.marker.is_ordinal() {
                         b.marker = ds.marker;
@@ -43,7 +48,7 @@ impl LangInterpretor for English {
             };
         }
         let lemma = lemmatize(num_func);
-        let status = match lemmatize(lemma) {
+        let status = match lemma {
             "zero" | "o" | "nought" => b.put(b"0"),
             "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
             "two" | "second" if b.peek(2) != b"10" => b.put(b"2"),
@@ -74,13 +79,13 @@ impl LangInterpretor for English {
             "ninety" | "ninetieth" => b.put(b"90"),
             "hundred" | "hundredth" => {
                 let peek = b.peek(2);
-                if peek.len() == 1 || peek < b"99" {
+                if peek.len() == 1 || peek != b"00" {
                     b.shift(2)
                 } else {
                     Err(Error::Overlap)
                 }
             }
-            "thousand" | "thousandth" => b.shift(3),
+            "thousand" | "thousandth" if b.is_range_free(3, 5) => b.shift(3),
             "million" | "millionth" => b.shift(6),
             "billion" | "billionth" => b.shift(9),
             "and" if b.len() >= 2 => Err(Error::Incomplete),

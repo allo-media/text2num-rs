@@ -1,11 +1,11 @@
 [package]
 name = "text2num"
-version = "2.1.4"
+version = "2.2.0"
 authors = ["Allo-Media <contact@allo-media.fr>"]
 edition = "2021"
 license = "MIT"
-description = "Parse and convert numbers written in English, Spanish or French into their digit representation."
-keywords = ["French", "Spanish", "English", "NLP", "words-to-numbers"]
+description = "Parse and convert numbers written in English, Spanish, German or French into their digit representation."
+keywords = ["French", "Spanish", "English", "German", "NLP", "words-to-numbers"]
 categories = ["text-processing"]
 repository = "https://github.com/allo-media/text2num-rs"
 readme = "README.md"
@@ -15,3 +15,4 @@ exclude = [".circleci", ".gitignore"]
 [dependencies]
 phf = { version = "0.8", features = ["macros"] }
 bitflags = "1.3"
+daachorse = "1"

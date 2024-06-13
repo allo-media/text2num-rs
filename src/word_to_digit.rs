@@ -42,7 +42,11 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
         } else {
             self.lang.apply(word, &mut self.int_part)
         };
-        if status.is_err() && !self.is_dec && self.lang.is_decimal_sep(word) {
+        if status.is_err()
+            && !self.is_dec
+            && !self.int_part.is_empty()
+            && self.lang.is_decimal_sep(word)
+        {
             self.is_dec = true;
             Err(Error::Incomplete)
         } else {
@@ -52,7 +56,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 
     /// Return representation and value and reset itself.
     pub fn string_and_value(&mut self) -> (String, f64) {
-        let res = if self.is_dec {
+        let res = if self.is_dec && !self.dec_part.is_empty() {
             self.lang
                 .format_decimal_and_value(&self.int_part, &self.dec_part)
         } else {
@@ -74,7 +78,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 /// Interpret the `text` as a integer number or ordinal, and translate it into digits.
 /// Return an error if the text couldn't be undestood as a valid number.
 pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
-    match lang.exec_group(text.split_whitespace()) {
+    match lang.exec_group(text.to_lowercase().split_whitespace()) {
         Ok(ds) => Ok(lang.format_and_value(&ds).0),
         Err(err) => Err(err),
     }

@@ -1,6 +1,6 @@
-/// French number interpretor.
-///
-/// It supports regional variants.
+//! French number interpretor.
+//!
+//! It supports regional variants.
 use bitflags::bitflags;
 
 use crate::digit_string::DigitString;
@@ -49,6 +49,9 @@ impl LangInterpretor for French {
         if num_func.contains('-') {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
+                    if ds.len() > 3 && ds.len() <= 6 && !b.is_range_free(3, 5) {
+                        return Err(Error::Overlap);
+                    }
                     b.put(&ds)?;
                     b.flags = ds.flags;
                     if ds.marker.is_ordinal() {
@@ -63,8 +66,7 @@ impl LangInterpretor for French {
         let blocked = Excludable::from_bits_truncate(b.flags);
         let mut to_block = Excludable::empty();
 
-        let lemma = lemmatize(num_func);
-        let status = match lemmatize(lemma) {
+        let status = match lemmatize(num_func) {
             "zéro" => b.put(b"0"),
             "un" | "unième" if !blocked.contains(Excludable::UN) => b.put(b"1"),
             "premier" | "première" if b.is_empty() => b.put(b"1"),
@@ -116,16 +118,43 @@ impl LangInterpretor for French {
             },
             "vingt" | "vingtième" => match b.peek(2) {
                 b"04" | b"4" => b.fput(b"80"),
-                _ => b.put(b"20"),
+                _ => {
+                    to_block = Excludable::UN;
+                    b.put(b"20")
+                }
             },
-            "trente" | "trentième" => b.put(b"30"),
-            "quarante" | "quarantième" => b.put(b"40"),
-            "cinquante" | "cinquantième" => b.put(b"50"),
-            "soixante" | "soixantième" => b.put(b"60"),
-            "septante" | "septantième" => b.put(b"70"),
-            "huitante" | "huitantiène" => b.put(b"80"),
-            "octante" | "octantième" => b.put(b"80"),
-            "nonante" | "nonantième" => b.put(b"90"),
+            "trente" | "trentième" => {
+                to_block = Excludable::UN;
+                b.put(b"30")
+            }
+            "quarante" | "quarantième" => {
+                to_block = Excludable::UN;
+                b.put(b"40")
+            }
+            "cinquante" | "cinquantième" => {
+                to_block = Excludable::UN;
+                b.put(b"50")
+            }
+            "soixante" | "soixantième" => {
+                to_block = Excludable::UN;
+                b.put(b"60")
+            }
+            "septante" | "septantième" => {
+                to_block = Excludable::UN;
+                b.put(b"70")
+            }
+            "huitante" | "huitantiène" => {
+                to_block = Excludable::UN;
+                b.put(b"80")
+            }
+            "octante" | "octantième" => {
+                to_block = Excludable::UN;
+                b.put(b"80")
+            }
+            "nonante" | "nonantième" => {
+                to_block = Excludable::UN;
+                b.put(b"90")
+            }
             "cent" | "centième" => {
                 let peek = b.peek(2);
                 if (peek.len() == 1 || peek < b"20") && peek != b"1" {
@@ -134,9 +163,9 @@ impl LangInterpretor for French {
                     Err(Error::Overlap)
                 }
             }
-            "mille" | "mil" | "millième" => {
+            "mille" | "mil" | "millième" if b.is_range_free(3, 5) => {
                 let peek = b.peek(2);
-                if peek == b"1" {
+                if peek == b"1" || peek == b"01" {
                     Err(Error::Overlap)
                 } else {
                     b.shift(3)
@@ -334,6 +363,7 @@ mod tests {
         assert_invalid!("dix deux");
         assert_invalid!("dix unième");
         assert_invalid!("vingtième cinq");
+        assert_invalid!("vingt un");
         assert_invalid!("zéro zéro trente quatre vingt");
         assert_invalid!("quatre-vingt dix-huit");
     }
@@ -359,6 +389,11 @@ mod tests {
         assert_replace_numbers!("quatre-vingt-dix un, soixante-dix un", "90 1, 70 1");
         assert_replace_numbers!("quatre-vingt-dix cinq, soixante-dix cinq", "90 5, 70 5");
         assert_replace_numbers!("nonante cinq, septante cinq", "95, 75");
+        assert_replace_numbers!("deux-cent-mille quatorze-mille", "200000 14000");
+        assert_replace_numbers!("vingt un", "20 1");
+        assert_replace_numbers!("vingt-un", "vingt-un");
+        assert_replace_numbers!("vingt et un", "21");
+        assert_replace_numbers!("vingt-et-un", "21");
     }
 
     #[test]
