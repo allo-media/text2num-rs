@@ -2,6 +2,8 @@
 //!
 //! Build numeric (base 10) representation using only elementary operations ensuring a
 //! valid construction at every step.
+//!
+//! Everywhere, the term `position` refers to decimal positions: 0 is units, 1 is tens, etc…
 
 use std::ops::Deref;
 
@@ -142,9 +144,23 @@ impl DigitString {
         &self.buffer[(length - range)..]
     }
 
-    /// Return true is the rightmorst `positions` positions are all free (empty or 0).
+    /// Return true if the rightmorst `positions` positions are all free (empty or 0).
     pub fn is_free(&self, positions: usize) -> bool {
         self.is_empty() || self.peek(positions).iter().all(|&c| c == b'0')
+    }
+
+    /// Range is inclusive on both ends.
+    pub fn is_range_free(&self, start_position: usize, end_position: usize) -> bool {
+        debug_assert!(start_position < end_position);
+        if start_position >= self.buffer.len() {
+            return true;
+        }
+        let left_bound = if end_position >= self.buffer.len() {
+            0
+        } else {
+            self.buffer.len() - end_position - 1
+        };
+        all_zeros(&self.buffer[left_bound..self.buffer.len() - start_position])
     }
 
     pub fn is_empty(&self) -> bool {
@@ -405,5 +421,15 @@ mod tests {
         builder.put_digit_at(b'2', 1).unwrap();
         assert!(builder.put_digit_at(b'3', 1).is_err());
         assert_eq!(builder.to_string(), "1020");
+    }
+
+    #[test]
+    fn test_is_range_free() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"200000");
+        assert!(dstring.is_range_free(6, 12));
+        assert!(dstring.is_range_free(3, 4));
+        assert!(!dstring.is_range_free(3, 5));
+        assert!(!dstring.is_range_free(3, 10));
     }
 }

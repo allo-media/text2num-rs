@@ -22,6 +22,7 @@ A language is just an empty (stateless) type. Everything is provided by implemen
 
 Look at the source of the builtin languages as examples.
 */
+mod de;
 mod en;
 mod es;
 mod fr;
@@ -30,6 +31,7 @@ use crate::digit_string::DigitString;
 
 use crate::error::Error;
 
+pub use de::German;
 pub use en::English;
 pub use es::Spanish;
 pub use fr::French;
@@ -119,8 +121,9 @@ pub trait LangInterpretor {
 
 /// A convenience enum that encapsulates the builtin languages in a single type.
 pub enum Language {
-    French(French),
     English(English),
+    French(French),
+    German(German),
     Spanish(Spanish),
 }
 
@@ -131,6 +134,10 @@ impl Language {
 
     pub fn english() -> Self {
         Language::English(English::default())
+    }
+
+    pub fn german() -> Self {
+        Language::German(German::default())
     }
 
     pub fn spanish() -> Self {
@@ -205,5 +212,5 @@ macro_rules! delegate {
 }
 
 impl LangInterpretor for Language {
-    delegate!(French, English, Spanish);
+    delegate!(French, English, German, Spanish);
 }

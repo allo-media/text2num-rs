@@ -49,6 +49,9 @@ impl LangInterpretor for French {
         if num_func.contains('-') {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
+                    if ds.len() > 3 && ds.len() <= 6 && !b.is_range_free(3, 5) {
+                        return Err(Error::Overlap);
+                    }
                     b.put(&ds)?;
                     b.flags = ds.flags;
                     if ds.marker.is_ordinal() {
@@ -133,9 +136,9 @@ impl LangInterpretor for French {
                     Err(Error::Overlap)
                 }
             }
-            "mille" | "mil" | "millième" => {
+            "mille" | "mil" | "millième" if b.is_range_free(3, 5) => {
                 let peek = b.peek(2);
-                if peek == b"1" {
+                if peek == b"1" || peek == b"01" {
                     Err(Error::Overlap)
                 } else {
                     b.shift(3)
@@ -333,6 +336,7 @@ mod tests {
         assert_invalid!("dix deux");
         assert_invalid!("dix unième");
         assert_invalid!("vingtième cinq");
+        assert_invalid!("vingt un");
         assert_invalid!("zéro zéro trente quatre vingt");
         assert_invalid!("quatre-vingt dix-huit");
     }
@@ -358,6 +362,7 @@ mod tests {
         assert_replace_numbers!("quatre-vingt-dix un, soixante-dix un", "90 1, 70 1");
         assert_replace_numbers!("quatre-vingt-dix cinq, soixante-dix cinq", "90 5, 70 5");
         assert_replace_numbers!("nonante cinq, septante cinq", "95, 75");
+        assert_replace_numbers!("deux-cent-mille quatorze-mille", "200000 14000");
     }
 
     #[test]
