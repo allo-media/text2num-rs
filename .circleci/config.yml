@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: cimg/rust:1.67
+      - image: cimg/rust:1.78
     steps:
       - checkout
       - run:
@@ -33,7 +33,7 @@ jobs:
           command: cargo publish --dry-run
   deploy:
     docker:
-      - image: cimg/rust:1.67
+      - image: cimg/rust:1.78
     steps:
       - checkout
       - run:
