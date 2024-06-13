@@ -163,6 +163,11 @@ impl DigitString {
         all_zeros(&self.buffer[left_bound..self.buffer.len() - start_position])
     }
 
+    pub fn is_position_free(&self, position: usize) -> bool {
+        let max_pos = self.buffer.len() - 1;
+        position > max_pos || self.buffer[max_pos - position] == b'0'
+    }
+
     pub fn is_empty(&self) -> bool {
         self.buffer.is_empty() && self.leading_zeroes == 0
     }
@@ -431,5 +436,17 @@ mod tests {
         assert!(dstring.is_range_free(3, 4));
         assert!(!dstring.is_range_free(3, 5));
         assert!(!dstring.is_range_free(3, 10));
+    }
+
+    #[test]
+    fn test_is_position_free() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"203070");
+        assert!(dstring.is_position_free(0));
+        assert!(dstring.is_position_free(2));
+        assert!(dstring.is_position_free(4));
+        assert!(!dstring.is_position_free(1));
+        assert!(!dstring.is_position_free(3));
+        assert!(!dstring.is_position_free(5));
     }
 }
