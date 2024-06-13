@@ -1,7 +1,9 @@
 //! DigitBuilder
 //!
-//! Build numeric representation using only elementary operations ensuring a
+//! Build numeric (base 10) representation using only elementary operations ensuring a
 //! valid construction at every step.
+//!
+//! Everywhere, the term `position` refers to decimal positions: 0 is units, 1 is tens, etc…
 
 use std::ops::Deref;
 
@@ -81,6 +83,32 @@ impl DigitString {
         }
     }
 
+    /// put a single non nul digit at a given position > 0 from the right. The position must be free (empty or 0)
+    ///
+    /// If new positions are created in between, they are filled with zeros.
+    pub fn put_digit_at(&mut self, digit: u8, position: usize) -> Result<(), Error> {
+        if self.frozen {
+            return Err(Error::Frozen);
+        }
+        if digit == b'0' {
+            return Err(Error::Overlap);
+        }
+        let len = self.buffer.len();
+        if position >= len {
+            let mut new_buffer = Vec::with_capacity(position + 3);
+            new_buffer.resize(position + 1, b'0');
+            new_buffer[0] = digit;
+            new_buffer[position + 1 - len..].copy_from_slice(&self.buffer);
+            self.buffer = new_buffer;
+            Ok(())
+        } else if self.buffer[len - 1 - position] == b'0' {
+            self.buffer[len - 1 - position] = digit;
+            Ok(())
+        } else {
+            Err(Error::Overlap)
+        }
+    }
+
     /// push the given digit string at the right, appending it to the digits already in the buffer.
     pub fn push(&mut self, digits: &[u8]) -> Result<(), Error> {
         self.buffer.extend_from_slice(digits);
@@ -114,6 +142,30 @@ impl DigitString {
         let length = self.buffer.len();
         let range = length.min(positions);
         &self.buffer[(length - range)..]
+    }
+
+    /// Return true if the rightmorst `positions` positions are all free (empty or 0).
+    pub fn is_free(&self, positions: usize) -> bool {
+        self.is_empty() || self.peek(positions).iter().all(|&c| c == b'0')
+    }
+
+    /// Range is inclusive on both ends.
+    pub fn is_range_free(&self, start_position: usize, end_position: usize) -> bool {
+        debug_assert!(start_position < end_position);
+        if start_position >= self.buffer.len() {
+            return true;
+        }
+        let left_bound = if end_position >= self.buffer.len() {
+            0
+        } else {
+            self.buffer.len() - end_position - 1
+        };
+        all_zeros(&self.buffer[left_bound..self.buffer.len() - start_position])
+    }
+
+    pub fn is_position_free(&self, position: usize) -> bool {
+        let max_pos = self.buffer.len() - 1;
+        position > max_pos || self.buffer[max_pos - position] == b'0'
     }
 
     pub fn is_empty(&self) -> bool {
@@ -363,5 +415,38 @@ mod tests {
         builder.put(b"2")?;
         assert_eq!(builder.to_string(), "002792");
         Ok(())
+    }
+
+    #[test]
+    fn test_put_digit_at() {
+        let mut builder = DigitString::new();
+        builder.put_digit_at(b'1', 3).unwrap();
+        assert_eq!(builder.to_string(), "1000");
+        assert!(builder.put_digit_at(b'0', 2).is_err());
+        builder.put_digit_at(b'2', 1).unwrap();
+        assert!(builder.put_digit_at(b'3', 1).is_err());
+        assert_eq!(builder.to_string(), "1020");
+    }
+
+    #[test]
+    fn test_is_range_free() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"200000");
+        assert!(dstring.is_range_free(6, 12));
+        assert!(dstring.is_range_free(3, 4));
+        assert!(!dstring.is_range_free(3, 5));
+        assert!(!dstring.is_range_free(3, 10));
+    }
+
+    #[test]
+    fn test_is_position_free() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"203070");
+        assert!(dstring.is_position_free(0));
+        assert!(dstring.is_position_free(2));
+        assert!(dstring.is_position_free(4));
+        assert!(!dstring.is_position_free(1));
+        assert!(!dstring.is_position_free(3));
+        assert!(!dstring.is_position_free(5));
     }
 }
