@@ -1,6 +1,6 @@
-/// French number interpretor.
-///
-/// It supports regional variants.
+//! French number interpretor.
+//!
+//! It supports regional variants.
 use bitflags::bitflags;
 
 use crate::digit_string::DigitString;
@@ -118,16 +118,43 @@ impl LangInterpretor for French {
             },
             "vingt" | "vingtième" => match b.peek(2) {
                 b"04" | b"4" => b.fput(b"80"),
-                _ => b.put(b"20"),
+                _ => {
+                    to_block = Excludable::UN;
+                    b.put(b"20")
+                }
             },
-            "trente" | "trentième" => b.put(b"30"),
-            "quarante" | "quarantième" => b.put(b"40"),
-            "cinquante" | "cinquantième" => b.put(b"50"),
-            "soixante" | "soixantième" => b.put(b"60"),
-            "septante" | "septantième" => b.put(b"70"),
-            "huitante" | "huitantiène" => b.put(b"80"),
-            "octante" | "octantième" => b.put(b"80"),
-            "nonante" | "nonantième" => b.put(b"90"),
+            "trente" | "trentième" => {
+                to_block = Excludable::UN;
+                b.put(b"30")
+            }
+            "quarante" | "quarantième" => {
+                to_block = Excludable::UN;
+                b.put(b"40")
+            }
+            "cinquante" | "cinquantième" => {
+                to_block = Excludable::UN;
+                b.put(b"50")
+            }
+            "soixante" | "soixantième" => {
+                to_block = Excludable::UN;
+                b.put(b"60")
+            }
+            "septante" | "septantième" => {
+                to_block = Excludable::UN;
+                b.put(b"70")
+            }
+            "huitante" | "huitantiène" => {
+                to_block = Excludable::UN;
+                b.put(b"80")
+            }
+            "octante" | "octantième" => {
+                to_block = Excludable::UN;
+                b.put(b"80")
+            }
+            "nonante" | "nonantième" => {
+                to_block = Excludable::UN;
+                b.put(b"90")
+            }
             "cent" | "centième" => {
                 let peek = b.peek(2);
                 if (peek.len() == 1 || peek < b"20") && peek != b"1" {
@@ -363,6 +390,10 @@ mod tests {
         assert_replace_numbers!("quatre-vingt-dix cinq, soixante-dix cinq", "90 5, 70 5");
         assert_replace_numbers!("nonante cinq, septante cinq", "95, 75");
         assert_replace_numbers!("deux-cent-mille quatorze-mille", "200000 14000");
+        assert_replace_numbers!("vingt un", "20 1");
+        assert_replace_numbers!("vingt-un", "vingt-un");
+        assert_replace_numbers!("vingt et un", "21");
+        assert_replace_numbers!("vingt-et-un", "21");
     }
 
     #[test]
