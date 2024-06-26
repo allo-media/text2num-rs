@@ -86,7 +86,7 @@ impl LangInterpretor for English {
                 }
             }
             "thousand" | "thousandth" if b.is_range_free(3, 5) => b.shift(3),
-            "million" | "millionth" => b.shift(6),
+            "million" | "millionth" if b.is_range_free(6, 8) => b.shift(6),
             "billion" | "billionth" => b.shift(9),
             "and" if b.len() >= 2 => Err(Error::Incomplete),
 
@@ -346,6 +346,7 @@ mod tests {
             one hundred twenty point o five, one point two hundred thirty-six, one point two three six.",
             "12.99, 120.05, 120.05, 1.2 136, 1.236."
         );
+        assert_replace_numbers!("I say point three", "I say point three");
     }
 
     #[test]
