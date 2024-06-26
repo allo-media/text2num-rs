@@ -197,6 +197,7 @@ impl DigitString {
                 Ok(())
             };
         }
+        // maybe subpart of a bigger number
         let mut padding_zeroes = self.buffer[(l - positions)..]
             .iter()
             .take_while(|&c| *c == b'0')
