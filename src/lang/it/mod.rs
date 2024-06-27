@@ -28,7 +28,8 @@ fn lemmatize(word: &str) -> &str {
             | "ttav"
             | "non"
             | "decim"
-    ) || candidate.ends_with("esim")
+    ) && word != "secondi"
+        || candidate.ends_with("esim")
     {
         candidate
     } else {
@@ -97,7 +98,7 @@ impl LangInterpretor for Italian {
         }
         let status = match lemmatize(num_func) {
             "zero" => b.put(b"0"),
-            "un" | "uno" | "una" | "unesim" if b.peek(2) != b"10" => b.put(b"1"),
+            "un" | "uno" | "una" | "unesim" if b.is_free(2) => b.put(b"1"),
             "prim" if b.is_empty() => b.put(b"1"),
             "due" | "duesim" if b.peek(2) != b"10" => b.put(b"2"),
             "second" if b.is_empty() => b.put(b"2"),
@@ -111,10 +112,10 @@ impl LangInterpretor for Italian {
             "sest" if b.is_empty() => b.put(b"6"),
             "sette" | "settesim" if b.peek(2) != b"10" => b.put(b"7"),
             "settim" if b.is_empty() => b.put(b"7"),
-            "otto" | "tto" | "ottesim" | "ttesim" if b.peek(2) != b"10" => b.put(b"8"),
+            "otto" | "tto" | "ottesim" | "ttesim" if b.is_free(2) => b.put(b"8"),
             "ottav" if b.is_empty() => b.put(b"8"),
             "nove" | "novesim" if b.peek(2) != b"10" => b.put(b"9"),
-            "non" if b.is_empty() => b.put(b"9"),
+            "non" if b.is_empty() && num_func != "non" => b.put(b"9"),
             "dieci" | "decim" => b.put(b"10"),
             "undici" | "undicesim" => b.put(b"11"),
             "dodici" | "dodicesim" => b.put(b"12"),
@@ -377,7 +378,7 @@ mod tests {
         );
 
         assert_text2digits!(
-            "cinquantuno milioni cinquecentosettantaottomilatrecentodue",
+            "cinquantuno milioni cinquecentosettantottomilatrecentodue",
             "51578302"
         );
 
@@ -393,9 +394,9 @@ mod tests {
 
     #[test]
     fn test_apply_variants() {
-        assert_text2digits!("novantaotto", "98");
-        assert_text2digits!("settantaotto", "78");
-        assert_text2digits!("ottantaotto", "88");
+        assert_text2digits!("novantotto", "98");
+        assert_text2digits!("settantotto", "78");
+        assert_text2digits!("ottantotto", "88");
         assert_text2digits!("ottantuno", "81");
         assert_text2digits!("ottanta", "80");
         assert_text2digits!("millenovecentoventi", "1920");
@@ -420,7 +421,7 @@ mod tests {
     #[test]
     fn test_ordinals() {
         assert_text2digits!("venticinquesimo", "25º");
-        assert_text2digits!("ventiunesimo", "21º");
+        assert_text2digits!("ventunesimo", "21º");
         assert_text2digits!("venticinquesimi", "25º");
         assert_text2digits!("ventunesimi", "21º");
     }
@@ -438,7 +439,7 @@ mod tests {
 
     #[test]
     fn test_invalid() {
-        // I've translated litteraly
+        assert_invalid!("ventiunesimo");
         assert_invalid!("mille mille duecento");
         assert_invalid!("sessanta quindici");
         assert_invalid!("quaranta dodici");
@@ -447,8 +448,10 @@ mod tests {
         assert_invalid!("dici primo");
         assert_invalid!("ventesimo cinque");
         assert_invalid!("venti uno");
+        assert_invalid!("venti otto");
         assert_invalid!("zero zero trenta quattro venti");
         assert_invalid!("ottanta diciotto");
+        assert_invalid!("novantaotto");
     }
 
     #[test]
@@ -470,7 +473,7 @@ mod tests {
         assert_replace_numbers!("venti-uno", "venti-uno");
         assert_replace_numbers!("ventuno", "21");
         assert_replace_numbers!("venti uno", "20 1");
-        assert_replace_numbers!("novanta cinque, settanta cinque", "90 5, 70 5");
+        assert_replace_numbers!("novanta cinque, settanta cinque", "95, 75");
         assert_replace_numbers!("novanta uno, settanta uno", "90 1, 70 1");
     }
 
@@ -515,7 +518,8 @@ mod tests {
         assert_replace_numbers!("cinquecentounesimo", "501º");
         assert_replace_numbers!("cinquecento primi", "500 primi");
         assert_replace_numbers!("cinquecento primo", "500 primo");
-        assert_replace_numbers!("primo secondo", "primo secondo");
+        assert_replace_numbers!("un secondo", "un secondo");
+        assert_replace_numbers!("due secondi", "due secondi");
     }
 
     #[test]
@@ -555,10 +559,10 @@ mod tests {
         );
         assert_replace_all_numbers!(
             "Il mio primo arriva prima del secondo e del terzo",
-            "Il mio 1° arriva 1° del 2° e del 3°"
+            "Il mio 1º arriva 1ª del 2º e del 3º"
         );
-        assert_replace_numbers!("Una dodicesima prova", "Una 12° prova");
-        assert_replace_numbers!("Primo, secondo, terzo", "1°, 2°, 3°");
+        assert_replace_numbers!("Una dodicesima prova", "Una 12ª prova");
+        assert_replace_numbers!("Primo, secondo, terzo", "1º, 2º, 3º");
         assert_replace_numbers!("un po' d'acqua", "un po' d'acqua");
         assert_replace_numbers!("un po' meno", "un po' meno");
         // assert_replace_numbers!("dodici é un po' di piu", "11 é un po' di piu");
