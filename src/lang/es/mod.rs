@@ -147,17 +147,17 @@ impl LangInterpretor for Spanish {
             "primer" => MorphologicalMarker::Ordinal(".ᵉʳ"),
             "primero" | "segundo" | "tercero" | "cuarto" | "quinto" | "sexto" | "séptimo"
             | "octavo" | "ctavo" | "noveno" => {
-                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+                MorphologicalMarker::Ordinal(if is_plur { "ᵒˢ" } else { "º" })
             }
             "primera" | "segunda" | "tercera" | "cuarta" | "quinta" | "sexta" | "séptima"
             | "octava" | "ctava" | "novena" => {
-                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+                MorphologicalMarker::Ordinal(if is_plur { "ᵃˢ" } else { "ª" })
             }
             ord if ord.ends_with("imo") => {
-                MorphologicalMarker::Ordinal(if is_plur { ".ᵒˢ" } else { ".º" })
+                MorphologicalMarker::Ordinal(if is_plur { "ᵒˢ" } else { "º" })
             }
             ord if ord.ends_with("ima") => {
-                MorphologicalMarker::Ordinal(if is_plur { ".ᵃˢ" } else { ".ª" })
+                MorphologicalMarker::Ordinal(if is_plur { "ᵃˢ" } else { "ª" })
             }
             ord if ord.ends_with("avo") => MorphologicalMarker::Fraction("avo"),
             _ => MorphologicalMarker::None,
@@ -273,19 +273,20 @@ mod tests {
     fn test_variants() {
         assert_text2digits!("un millon", "1000000");
         assert_text2digits!("un millón", "1000000");
-        assert_text2digits!("décimo primero", "11.º");
-        assert_text2digits!("decimoprimero", "11.º");
-        assert_text2digits!("undécimo", "11.º");
-        assert_text2digits!("décimo segundo", "12.º");
-        assert_text2digits!("decimosegundo", "12.º");
-        assert_text2digits!("duodécimo", "12.º");
+        assert_text2digits!("décimo primero", "11º");
+        assert_text2digits!("decimoprimero", "11º");
+        assert_text2digits!("undécimo", "11º");
+        assert_text2digits!("décimo segundo", "12º");
+        assert_text2digits!("decimosegundo", "12º");
+        assert_text2digits!("duodécimo", "12º");
     }
 
     #[test]
     fn test_ordinals() {
-        assert_text2digits!("vigésimo cuarto", "24.º");
-        assert_text2digits!("vigésimo primero", "21.º");
-        assert_text2digits!("decimosexta", "16.ª");
+        assert_text2digits!("vigésimo cuarto", "24º");
+        assert_text2digits!("vigésimo primero", "21º");
+        assert_text2digits!("ciento primero", "101º");
+        assert_text2digits!("decimosexta", "16ª");
         assert_text2digits!("decimosextas", "16.ᵃˢ");
         assert_text2digits!("decimosextos", "16.ᵒˢ");
     }
@@ -306,6 +307,7 @@ mod tests {
         assert_invalid!("cincuenta cero tres");
         assert_invalid!("cincuenta y tres cero");
         assert_invalid!("diez cero");
+        assert_invalid!("cero uno");
     }
 
     #[test]
@@ -365,22 +367,22 @@ mod tests {
     fn test_replace_numbers_ordinals() {
         assert_replace_numbers!(
             "Cuarto quinto segundo tercero vigésimo primero centésimo milésimo ducentésimo trigésimo.",
-            "4.º 5.º segundo 3.º 21.º 100230.º."
+            "4º 5º segundo 3º 21º 100230º."
         );
-        assert_replace_numbers!("centésimo trigésimo segundo", "132.º");
-        assert_replace_numbers!("centésimo, trigésimo, segundo", "100.º, 30.º, segundo");
+        assert_replace_numbers!("centésimo trigésimo segundo", "132º");
+        assert_replace_numbers!("centésimo, trigésimo, segundo", "100º, 30º, segundo");
         assert_replace_numbers!(
             "Un segundo por favor! Vigésimo segundo es diferente que veinte segundos.",
-            "Un segundo por favor! 22.º es diferente que 20 segundos."
+            "Un segundo por favor! 22º es diferente que 20 segundos."
         );
         assert_replace_numbers!(
             "Un segundo por favor! Vigésimos segundos es diferente que veinte segundos.",
-            "Un segundo por favor! 22.ᵒˢ es diferente que 20 segundos."
+            "Un segundo por favor! 22ᵒˢ es diferente que 20 segundos."
         );
-        assert_replace_all_numbers!("Él ha quedado tercero", "Él ha quedado 3.º");
-        assert_replace_all_numbers!("Ella ha quedado tercera", "Ella ha quedado 3.ª");
-        assert_replace_all_numbers!("Ellos han quedado terceros", "Ellos han quedado 3.ᵒˢ");
-        assert_replace_all_numbers!("Ellas han quedado terceras", "Ellas han quedado 3.ᵃˢ");
+        assert_replace_all_numbers!("Él ha quedado tercero", "Él ha quedado 3º");
+        assert_replace_all_numbers!("Ella ha quedado tercera", "Ella ha quedado 3ª");
+        assert_replace_all_numbers!("Ellos han quedado terceros", "Ellos han quedado 3ᵒˢ");
+        assert_replace_all_numbers!("Ellas han quedado terceras", "Ellas han quedado 3ᵃˢ");
     }
 
     #[test]
