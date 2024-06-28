@@ -157,7 +157,7 @@ impl LangInterpretor for French {
             }
             "cent" | "centième" => {
                 let peek = b.peek(2);
-                if (peek.len() == 1 || peek < b"20") && peek != b"1" {
+                if (peek.len() == 1 || peek < b"20") && peek != b"1" && peek != b"01" {
                     b.shift(2)
                 } else {
                     Err(Error::Overlap)
@@ -171,7 +171,7 @@ impl LangInterpretor for French {
                     b.shift(3)
                 }
             }
-            "million" | "millionième" => b.shift(6),
+            "million" | "millionième" if b.is_range_free(6, 8) => b.shift(6),
             "milliard" | "milliardième" => b.shift(9),
             "et" if b.len() >= 2 => Err(Error::Incomplete),
 
@@ -291,15 +291,25 @@ mod tests {
     #[test]
     fn test_apply() {
         assert_text2digits!(
+            "cinquante trois mille millions deux cent quarante-trois mille sept cent vingt-quatre",
+            "53000243724"
+        );
+
+        assert_text2digits!(
             "cinquante trois mille millions deux cent quarante trois mille sept cent vingt quatre",
             "53000243724"
         );
 
         assert_text2digits!(
+            "cinquante et un million cinq cent soixante-dix-huit mille trois cent deux",
+            "51578302"
+        );
+        assert_text2digits!(
             "cinquante et un million cinq cent soixante dix huit mille trois cent deux",
             "51578302"
         );
 
+        assert_text2digits!("quatre-vingt-cinq", "85");
         assert_text2digits!("quatre vingt cinq", "85");
 
         assert_text2digits!("quatre vingt un", "81");
@@ -328,17 +338,20 @@ mod tests {
 
     #[test]
     fn test_centuries() {
+        assert_text2digits!("dix neuf cent soixante-treize", "1973");
         assert_text2digits!("dix neuf cent soixante treize", "1973");
     }
 
     #[test]
     fn test_ordinals() {
+        assert_text2digits!("vingt-cinquième", "25ème");
         assert_text2digits!("vingt cinquième", "25ème");
         assert_text2digits!("vingt et unième", "21ème");
     }
 
     #[test]
     fn test_fractions() {
+        assert_text2digits!("vingt-cinquièmes", "25èmes");
         assert_text2digits!("vingt cinquièmes", "25èmes");
         assert_text2digits!("vingt et unièmes", "21èmes");
     }
@@ -347,6 +360,7 @@ mod tests {
     fn test_zeroes() {
         assert_text2digits!("zéro", "0");
         assert_text2digits!("zéro huit", "08");
+        assert_text2digits!("zéro zéro cent vingt-cinq", "00125");
         assert_text2digits!("zéro zéro cent vingt cinq", "00125");
         assert_invalid!("cinq zéro");
         assert_invalid!("cinquante zéro trois");
@@ -366,6 +380,7 @@ mod tests {
         assert_invalid!("vingt un");
         assert_invalid!("zéro zéro trente quatre vingt");
         assert_invalid!("quatre-vingt dix-huit");
+        assert_invalid!("mille un cent");
     }
 
     #[test]
@@ -451,6 +466,7 @@ mod tests {
             "la densité moyenne est de zéro virgule cinq.",
             "la densité moyenne est de 0,5."
         );
+        assert_replace_numbers!("Je dis virgule cinq", "Je dis virgule cinq");
     }
 
     #[test]
