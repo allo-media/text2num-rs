@@ -285,10 +285,10 @@ mod tests {
     fn test_ordinals() {
         assert_text2digits!("vigésimo cuarto", "24º");
         assert_text2digits!("vigésimo primero", "21º");
-        assert_text2digits!("ciento primero", "101º");
+        assert_text2digits!("centésimo primero", "101º");
         assert_text2digits!("decimosexta", "16ª");
-        assert_text2digits!("decimosextas", "16.ᵃˢ");
-        assert_text2digits!("decimosextos", "16.ᵒˢ");
+        assert_text2digits!("decimosextas", "16ᵃˢ");
+        assert_text2digits!("decimosextos", "16ᵒˢ");
     }
 
     #[test]
@@ -301,13 +301,13 @@ mod tests {
     #[test]
     fn test_zeroes() {
         assert_text2digits!("cero", "0");
+        assert_text2digits!("cero uno", "01");
         assert_text2digits!("cero ocho", "08");
         assert_text2digits!("cero cero ciento veinticinco", "00125");
         assert_invalid!("cinco cero");
         assert_invalid!("cincuenta cero tres");
         assert_invalid!("cincuenta y tres cero");
         assert_invalid!("diez cero");
-        assert_invalid!("cero uno");
     }
 
     #[test]
@@ -360,6 +360,7 @@ mod tests {
         assert_replace_numbers!("trece mil cero noventa", "13000 090");
         assert_replace_numbers!("cero", "cero");
         assert_replace_numbers!("cero cinco", "05");
+        assert_replace_numbers!("cero uno ochenta y cinco", "01 85");
         assert_replace_numbers!("cero, cinco", "0, 5");
     }
 
