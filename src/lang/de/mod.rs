@@ -174,7 +174,7 @@ impl LangInterpretor for German {
                 }
             }
             "tausend" | "tausendste" if b.is_range_free(3, 5) => b.shift(3),
-            "million" | "millionen" | "millionste" => b.shift(6),
+            "million" | "millionen" | "millionste" if b.is_range_free(6, 8) => b.shift(6),
             "milliarde" | "milliarden" | "milliardste" => b.shift(9),
             "billion" | "billionste" => b.shift(12),
             "und" => Err(Error::Incomplete),
