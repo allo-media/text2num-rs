@@ -165,7 +165,7 @@ impl LangInterpretor for French {
             }
             "mille" | "mil" | "millième" if b.is_range_free(3, 5) => {
                 let peek = b.peek(2);
-                if peek == b"1" || peek == b"01" {
+                if peek == b"1" {
                     Err(Error::Overlap)
                 } else {
                     b.shift(3)
@@ -317,6 +317,7 @@ mod tests {
         assert_text2digits!("quinze", "15");
 
         assert_text2digits!("soixante quinze mille", "75000");
+        assert_text2digits!("cent un mille", "101000");
         assert_text2digits!("un milliard vingt-cinq millions", "1025000000");
     }
 

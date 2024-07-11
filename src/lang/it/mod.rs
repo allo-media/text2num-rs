@@ -335,7 +335,6 @@ mod tests {
     fn test_basic() {
         assert_text2digits!("due", "2");
         assert_text2digits!("dieci", "10");
-        assert_text2digits!("dieci", "10");
         assert_text2digits!("tredici", "13");
         assert_text2digits!("diciassette", "17");
         assert_text2digits!("venti", "20");

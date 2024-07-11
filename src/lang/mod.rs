@@ -27,6 +27,7 @@ mod en;
 mod es;
 mod fr;
 mod it;
+mod nl;
 
 use crate::digit_string::DigitString;
 
@@ -37,6 +38,7 @@ pub use en::English;
 pub use es::Spanish;
 pub use fr::French;
 pub use it::Italian;
+pub use nl::Dutch;
 
 /// Model the Morphological markers that differenciate ordinals or fractions from cardinals,
 /// and that must be retained on the digit form.
@@ -128,6 +130,7 @@ pub enum Language {
     German(German),
     Italian(Italian),
     Spanish(Spanish),
+    Dutch(Dutch),
 }
 
 impl Language {
@@ -149,6 +152,10 @@ impl Language {
 
     pub fn spanish() -> Self {
         Language::Spanish(Spanish::default())
+    }
+
+    pub fn dutch() -> Self {
+        Language::Dutch(Dutch::default())
     }
 }
 
@@ -219,5 +226,5 @@ macro_rules! delegate {
 }
 
 impl LangInterpretor for Language {
-    delegate!(French, English, German, Italian, Spanish);
+    delegate!(Dutch, French, English, German, Italian, Spanish);
 }

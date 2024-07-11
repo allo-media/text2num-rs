@@ -41,6 +41,7 @@ impl DigitString {
         self.frozen = false;
         self.marker = MorphologicalMarker::None;
         self.buffer.clear();
+        self.flags = 0;
     }
 
     /// Freeze the DigitSring to signal the number is complete.
