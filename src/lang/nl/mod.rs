@@ -217,19 +217,20 @@ impl LangInterpretor for Dutch {
     }
 
     fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
-        match decimal_func {
-            "nul" => b.push(b"0"),
-            "een" | "één" => b.push(b"1"),
-            "twee" => b.push(b"2"),
-            "drie" => b.push(b"3"),
-            "vier" => b.push(b"4"),
-            "vijf" => b.push(b"5"),
-            "zes" => b.push(b"6"),
-            "zeven" => b.push(b"7"),
-            "acht" => b.push(b"8"),
-            "negen" => b.push(b"9"),
-            _ => Err(Error::NaN),
-        }
+        // match decimal_func {
+        //     "nul" => b.push(b"0"),
+        //     "een" | "één" => b.push(b"1"),
+        //     "twee" => b.push(b"2"),
+        //     "drie" => b.push(b"3"),
+        //     "vier" => b.push(b"4"),
+        //     "vijf" => b.push(b"5"),
+        //     "zes" => b.push(b"6"),
+        //     "zeven" => b.push(b"7"),
+        //     "acht" => b.push(b"8"),
+        //     "negen" => b.push(b"9"),
+        //     _ => Err(Error::NaN),
+        // }
+        self.apply(decimal_func, b)
     }
 
     fn is_decimal_sep(&self, word: &str) -> bool {
@@ -469,17 +470,16 @@ mod tests {
 
     #[test]
     fn test_replace_numbers_decimals() {
-        //         assert_replace_numbers!(
-        //             "Twaalf komma negenennegentig, honderdtwintig komma nul vijf, één komma tweehonderdzesendertig, één komma twee drie zes
-        // .",
-        //             "12,99, 120,05, 1,236, 1,2 3 6."
-        //         );
         assert_replace_numbers!(
-            "Twaalf komma negen negen, honderdtwintig komma nul vijf, één komma twee drie zes, één komma tweehonderdzesendertig.",
-            "12,99, 120,05, 1,236, 1 komma 236."
-        );
-        // assert_replace_numbers!("nul komma honderdtwaalf", "0,112");
-        assert_replace_numbers!("nul komma één één twee", "0,112");
+                    "Twaalf komma negenennegentig, honderdtwintig komma nul vijf, één komma tweehonderdzesendertig, één komma twee drie zes.",
+                    "12,99, 120,05, 1,236, 1,2 3 6."
+                );
+        // assert_replace_numbers!(
+        //     "Twaalf komma negen negen, honderdtwintig komma nul vijf, één komma twee drie zes, één komma tweehonderdzesendertig.",
+        //     "12,99, 120,05, 1,236, 1 komma 236."
+        // );
+        assert_replace_numbers!("nul komma honderdtwaalf", "0,112");
+        // assert_replace_numbers!("nul komma één één twee", "0,112");
         assert_replace_numbers!(
             "de gemiddelde dichtheid is nul komma vijf.",
             "de gemiddelde dichtheid is 0,5."
