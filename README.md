@@ -1,4 +1,4 @@
-# Parse and convert numbers written in English, Spanish or French into their digit representation.
+# Parse and convert numbers written in English, Dutch, Spanish, German, Italian or French into their digit representation.
 
 This crate provides a library for recognizing, parsing and transcribing into digits (base 10) numbers expressed in natural language.
 

@@ -196,6 +196,19 @@ pub use word_to_digit::{
     find_numbers, replace_numbers, rewrite_numbers, text2digits, Occurence, Token,
 };
 
+/// Get an interpreter for the language represented by the `language_code` ISO code.
+pub fn get_interpretor_for(language_code: &str) -> Option<Language> {
+    match language_code {
+        "de" => Some(Language::german()),
+        "en" => Some(Language::english()),
+        "es" => Some(Language::spanish()),
+        "fr" => Some(Language::french()),
+        "it" => Some(Language::italian()),
+        "nl" => Some(Language::dutch()),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{replace_numbers, Language};
