@@ -374,7 +374,7 @@ where
         let is_ordinal = self.parser.is_ordinal();
         let (digits, value) = self.parser.string_and_value();
         let forget_if_isolate = (digits.len() == 1 || is_ordinal) && value < self.threshold
-            || self.lang.is_ambiguous(&digits);
+            || self.lang.is_ambiguous(&digits) && self.threshold > 0.0;
         self.tracker
             .number_end(is_ordinal, digits, value, forget_if_isolate);
     }
