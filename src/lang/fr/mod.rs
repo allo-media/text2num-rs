@@ -260,7 +260,7 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f, 10.0), $res)
+            assert_eq!(replace_numbers($text, &f, 7.0), $res)
         };
     }
 
@@ -500,8 +500,8 @@ mod tests {
         assert_replace_numbers!("un peu moins", "un peu moins");
         // assert_replace_numbers!("onze c'est un peu plus", "11 c'est un peu plus");
 
-        assert_replace_all_numbers!("le logement neuf", "le logement neuf");
-        assert_replace_all_numbers!("le logement neuf deux sept", "le logement 9 2 7");
+        assert_replace_numbers!("le logement neuf", "le logement neuf");
+        assert_replace_numbers!("le logement neuf deux sept", "le logement 9 2 7");
     }
 
     #[test]

@@ -18,7 +18,7 @@ text2num = "1"
 
 # Example: check some string is a valid number in a given language.
 
-For convenience, the builtin languages are encapsulated into the [`Language`](lang::Language) type so
+For convenience, the builtin languages are encapsulated into the [`Language`] type so
 you can easily switch languages at runtime.
 
 Each builtin language support regional varieties automatically, so you don't need to specify a region.
@@ -193,7 +193,8 @@ pub mod word_to_digit;
 
 pub use lang::{LangInterpretor, Language};
 pub use word_to_digit::{
-    find_numbers, replace_numbers, rewrite_numbers, text2digits, Occurence, Token,
+    find_numbers, find_numbers_iter, replace_numbers, rewrite_numbers, text2digits, Occurence,
+    Replace, Token,
 };
 
 /// Get an interpreter for the language represented by the `language_code` ISO code.
