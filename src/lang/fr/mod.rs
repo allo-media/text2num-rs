@@ -237,8 +237,38 @@ impl LangInterpretor for French {
         INSIGNIFICANT.contains(word)
     }
 
-    fn is_ambiguous(&self, number: &str) -> bool {
-        number == "9"
+    fn basic_annotate(&self, tokens: &mut Vec<crate::tokenizer::BasicToken>) {
+        let mut iart_seen: Option<(String, usize)> = None;
+        let mut num_wsp = 0;
+        let mut b = DigitString::new();
+        for (i, token) in tokens.iter_mut().enumerate() {
+            if token.text.chars().all(|c| c.is_ascii_whitespace()) {
+                if iart_seen.is_some() {
+                    num_wsp += 1;
+                }
+                continue;
+            }
+            let lo = token.text.to_lowercase();
+            if lo == "un" || lo == "le" || lo == "du" || lo == "l'" {
+                iart_seen.replace((lo, i));
+                num_wsp = 0;
+            } else if lo == "neuf" {
+                if let Some((art, pos)) = iart_seen.take() {
+                    let sep_words = i - pos - num_wsp - 1;
+                    match art.as_str() {
+                        "un" => {
+                            if sep_words > 0 && sep_words < 3 {
+                                token.nan = true
+                            }
+                        }
+                        _ if sep_words == 0 => token.nan = true,
+                        _ => (),
+                    }
+                }
+            } else if self.apply(&lo, &mut b).is_ok() {
+                iart_seen.take();
+            }
+        }
     }
 }
 
@@ -500,7 +530,7 @@ mod tests {
         assert_replace_numbers!("un peu moins", "un peu moins");
         // assert_replace_numbers!("onze c'est un peu plus", "11 c'est un peu plus");
 
-        assert_replace_numbers!("le logement neuf", "le logement neuf");
+        assert_replace_numbers!("le logement neuf", "le logement 9");
         assert_replace_numbers!("le logement neuf deux sept", "le logement 9 2 7");
     }
 

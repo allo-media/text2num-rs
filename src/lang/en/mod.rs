@@ -47,7 +47,7 @@ impl LangInterpretor for English {
                 Err(err) => Err(err),
             };
         }
-        let lemma = lemmatize(num_func);
+        let lemma = dbg!(lemmatize(num_func));
         let status = match lemma {
             "zero" | "o" | "nought" => b.put(b"0"),
             "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
@@ -101,7 +101,7 @@ impl LangInterpretor for English {
             b.marker = self.get_morph_marker(num_func);
             b.freeze();
         }
-        status
+        dbg!(status)
     }
 
     fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
@@ -162,8 +162,38 @@ impl LangInterpretor for English {
         INSIGNIFICANT.contains(word)
     }
 
-    fn is_ambiguous(&self, _number: &str) -> bool {
-        false
+    fn basic_annotate(&self, tokens: &mut Vec<crate::tokenizer::BasicToken>) {
+        let mut b = DigitString::new();
+        println!("{:?}", tokens);
+        let significant_tokens_indices: Vec<usize> = tokens
+            .iter()
+            .enumerate()
+            .filter_map(|(i, t)| {
+                if !t.text.chars().all(|c| c.is_ascii_whitespace()) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for (j, &i) in significant_tokens_indices.iter().enumerate() {
+            if tokens[i].text == "o" {
+                if j > 0
+                    && self
+                        .apply(&tokens[significant_tokens_indices[j - 1]].text, &mut b)
+                        .is_ok()
+                    || j + 1 < significant_tokens_indices.len()
+                        && self
+                            .apply(&tokens[significant_tokens_indices[j + 1]].text, &mut b)
+                            .is_ok()
+                {
+                    b.reset()
+                } else {
+                    tokens[i].nan = true;
+                }
+            }
+        }
+        println!("{:?}", tokens);
     }
 }
 
@@ -264,6 +294,8 @@ mod tests {
         assert_invalid!("five o");
         assert_invalid!("fifty zero three");
         assert_invalid!("fifty three zero");
+        assert_replace_all_numbers!("zero a b c", "0 a b c");
+        assert_replace_all_numbers!("o a b c", "o a b c");
     }
 
     #[test]

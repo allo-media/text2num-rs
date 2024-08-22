@@ -10,7 +10,7 @@ use std::iter::Enumerate;
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::LangInterpretor;
-use crate::tokenizer::tokenize;
+use crate::tokenizer::{tokenize, BasicToken};
 
 struct WordToDigitParser<'a, T: LangInterpretor> {
     int_part: DigitString,
@@ -121,6 +121,10 @@ pub trait Token {
             // if there is a voice pause of more than 100ms between words, it is worth a punctuation
             self.start - previous.end > 100
         }
+
+        fn not_a_number_part(&self) -> bool {
+            false
+        }
     }
     // Simulate ASR output for “ 3.14  5 ”
     let output = [
@@ -148,6 +152,8 @@ pub trait Token {
 
     */
     fn nt_separated(&self, previous: &Self) -> bool;
+    // Despite its form, we have evidence that this token is not a number part.
+    fn not_a_number_part(&self) -> bool;
 }
 
 pub trait Replace {
@@ -155,23 +161,30 @@ pub trait Replace {
     fn replace<I: Iterator<Item = Self>>(replaced: I, data: String) -> Self;
 }
 
-impl Token for &String {
+impl Token for &BasicToken {
     fn text(&self) -> &str {
-        self.as_ref()
+        self.text.as_str()
     }
 
     fn text_lowercase(&self) -> String {
-        self.to_lowercase()
+        self.text.to_lowercase()
     }
 
     fn nt_separated(&self, _previous: &Self) -> bool {
         false
     }
+
+    fn not_a_number_part(&self) -> bool {
+        self.nan
+    }
 }
 
-impl Replace for String {
+impl Replace for BasicToken {
     fn replace<I: Iterator<Item = Self>>(_replaced: I, data: String) -> Self {
-        data
+        Self {
+            text: data,
+            nan: false,
+        }
     }
 }
 
@@ -333,6 +346,14 @@ where
         if token.text() == "-" || is_whitespace(token.text()) {
             return;
         }
+        if token.not_a_number_part() {
+            if self.parser.has_number() {
+                self.number_end()
+            }
+            self.outside_number(&token);
+            self.previous.replace(token);
+            return;
+        }
         let lo_token = token.text_lowercase();
         let test = if let Some(ref prev) = self.previous {
             if self.parser.has_number() && token.nt_separated(prev) {
@@ -373,8 +394,7 @@ where
     fn number_end(&mut self) {
         let is_ordinal = self.parser.is_ordinal();
         let (digits, value) = self.parser.string_and_value();
-        let forget_if_isolate = (digits.len() == 1 || is_ordinal) && value < self.threshold
-            || self.lang.is_ambiguous(&digits) && self.threshold > 0.0;
+        let forget_if_isolate = (digits.len() == 1 || is_ordinal) && value < self.threshold;
         self.tracker
             .number_end(is_ordinal, digits, value, forget_if_isolate);
     }
@@ -484,11 +504,9 @@ where
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
-    let out = rewrite_numbers(
-        tokenize(text).map(|s| s.to_owned()).collect(),
-        lang,
-        threshold,
-    );
+    let mut tokens = tokenize(text).collect();
+    lang.basic_annotate(&mut tokens);
+    let out = rewrite_numbers(tokens, lang, threshold);
     out.join("")
 }
 
@@ -500,6 +518,25 @@ fn is_whitespace(token: &str) -> bool {
 mod tests {
     use super::*;
     use crate::lang::Language;
+    use crate::tokenizer::tokenize;
+
+    impl Token for BasicToken {
+        fn text(&self) -> &str {
+            self.text.as_str()
+        }
+
+        fn text_lowercase(&self) -> String {
+            self.text.to_lowercase()
+        }
+
+        fn nt_separated(&self, _previous: &Self) -> bool {
+            false
+        }
+
+        fn not_a_number_part(&self) -> bool {
+            self.nan
+        }
+    }
 
     #[test]
     fn test_word_to_digits_parser_zero() {
@@ -522,15 +559,7 @@ mod tests {
     #[test]
     fn test_find_isolated_single() {
         let fr = Language::french();
-        let ocs = find_numbers(
-            "c'est un logement neuf"
-                .split_whitespace()
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>()
-                .iter(),
-            &fr,
-            10.0,
-        );
+        let ocs = find_numbers(tokenize("c'est un logement neuf"), &fr, 10.0);
         dbg!(&ocs);
         assert!(ocs.is_empty());
     }
@@ -538,15 +567,7 @@ mod tests {
     #[test]
     fn test_find_all_isolated_single() {
         let fr = Language::french();
-        let ocs = find_numbers(
-            "c'est zéro"
-                .split_whitespace()
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>()
-                .iter(),
-            &fr,
-            0.0,
-        );
+        let ocs = find_numbers(tokenize("c'est zéro"), &fr, 0.0);
         dbg!(&ocs);
         assert_eq!(ocs.len(), 1);
         assert_eq!(ocs[0].text, "0");
@@ -556,15 +577,7 @@ mod tests {
     #[test]
     fn test_find_isolated_long() {
         let fr = Language::french();
-        let ocs = find_numbers(
-            "trente-sept rue du docteur leroy"
-                .split_whitespace()
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>()
-                .iter(),
-            &fr,
-            10.0,
-        );
+        let ocs = find_numbers(tokenize("trente-sept rue du docteur leroy"), &fr, 10.0);
         dbg!(&ocs);
         assert_eq!(ocs.len(), 1);
         assert_eq!(ocs[0].text, "37");
@@ -574,15 +587,7 @@ mod tests {
     #[test]
     fn test_find_isolated_with_leading_zero() {
         let fr = Language::french();
-        let ocs = find_numbers(
-            "quatre-vingt-douze slash zéro deux"
-                .split_whitespace()
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>()
-                .iter(),
-            &fr,
-            10.0,
-        );
+        let ocs = find_numbers(tokenize("quatre-vingt-douze slash zéro deux"), &fr, 10.0);
         dbg!(&ocs);
         assert_eq!(ocs.len(), 2);
         assert_eq!(ocs[1].text, "02");

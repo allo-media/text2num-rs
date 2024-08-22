@@ -245,10 +245,6 @@ impl LangInterpretor for German {
     fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
-
-    fn is_ambiguous(&self, _number: &str) -> bool {
-        false
-    }
 }
 
 #[cfg(test)]

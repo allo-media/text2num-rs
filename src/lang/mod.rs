@@ -30,6 +30,7 @@ mod it;
 mod nl;
 
 use crate::digit_string::DigitString;
+use crate::tokenizer::BasicToken;
 
 use crate::error::Error;
 
@@ -102,8 +103,6 @@ pub trait LangInterpretor {
     /// that separate unrelated numbers. So the method would return `false` for them.
     /// This function is used to find isolate numbers.
     fn is_linking(&self, word: &str) -> bool;
-    /// In some languages, numbers can be homonyms to other words
-    fn is_ambiguous(&self, number: &str) -> bool;
     /// Process the `group` as all or nothing.
     fn exec_group<'a, I: Iterator<Item = &'a str>>(&self, group: I) -> Result<DigitString, Error> {
         let mut b = DigitString::new();
@@ -121,6 +120,8 @@ pub trait LangInterpretor {
             Ok(b)
         }
     }
+
+    fn basic_annotate(&self, _tokens: &mut Vec<BasicToken>) {}
 }
 
 /// A convenience enum that encapsulates the builtin languages in a single type.
@@ -213,15 +214,6 @@ macro_rules! delegate {
                 )*
             }
         }
-
-        fn is_ambiguous(&self, number: &str) -> bool {
-            match self {
-                $(
-                    Language::$variant(l) => l.is_ambiguous(number),
-                )*
-            }
-        }
-
     };
 }
 

@@ -102,21 +102,21 @@ The `text2num` library can process those streams as long as the token type imple
 
 # Example: substitutions in a token stream.
 
-The `Token` trait is already implemented for the `String` type, so we can show a simple example with `String` streams:
+The `Token` trait is already implemented for the [`BasicToken`] type, so we can show a simple example with `String` streams:
 
 ```rust
-use text2num::{rewrite_numbers, Language};
+use text2num::{rewrite_numbers, Language, tokenize};
 
 let en = Language::english();
 
 // Poor man's tokenizer
-let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| s.to_owned()).collect();
+let stream = tokenize("I have two hundreds and twenty dollars in my pocket").collect();
 
 let processed_stream = rewrite_numbers(stream, &en, 10.0);
 
 assert_eq!(
-    processed_stream,
-    vec!["I", "have", "220", "dollars", "in", "my", "pocket"]
+    processed_stream.iter().map(|token| token.text.as_str()).collect::<Vec<_>>(),
+    vec!["I", " ", "have", " ", "220", " ", "dollars", " ", "in", " ", "my", " ", "pocket"]
 );
 ```
 
@@ -146,6 +146,10 @@ impl Token for DecodedWord<'_> {
     fn nt_separated(&self, previous: &Self) -> bool {
         // if there is a voice pause of more than 100ms between words, it is worth a punctuation
         self.start - previous.end > 100
+    }
+
+    fn not_a_number_part(&self) -> bool {
+        false
     }
 }
 
@@ -192,6 +196,7 @@ mod tokenizer;
 pub mod word_to_digit;
 
 pub use lang::{LangInterpretor, Language};
+pub use tokenizer::{tokenize, BasicToken};
 pub use word_to_digit::{
     find_numbers, find_numbers_iter, replace_numbers, rewrite_numbers, text2digits, Occurence,
     Replace, Token,
