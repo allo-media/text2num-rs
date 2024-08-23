@@ -121,10 +121,6 @@ pub trait Token {
             // if there is a voice pause of more than 100ms between words, it is worth a punctuation
             self.start - previous.end > 100
         }
-
-        fn not_a_number_part(&self) -> bool {
-            false
-        }
     }
     // Simulate ASR output for “ 3.14  5 ”
     let output = [
@@ -151,9 +147,13 @@ pub trait Token {
     ```
 
     */
-    fn nt_separated(&self, previous: &Self) -> bool;
+    fn nt_separated(&self, _previous: &Self) -> bool {
+        false
+    }
     // Despite its form, we have evidence that this token is not a number part.
-    fn not_a_number_part(&self) -> bool;
+    fn not_a_number_part(&self) -> bool {
+        false
+    }
 }
 
 pub trait Replace {

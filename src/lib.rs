@@ -105,18 +105,36 @@ The `text2num` library can process those streams as long as the token type imple
 The `Token` trait is already implemented for the [`BasicToken`] type, so we can show a simple example with `String` streams:
 
 ```rust
-use text2num::{rewrite_numbers, Language, tokenize};
+use text2num::{rewrite_numbers, Language, Token, Replace};
 
 let en = Language::english();
 
+struct BareToken(String);
+
+impl Token for &BareToken {
+    fn text(&self) -> &str {
+        self.0.as_ref()
+    }
+
+    fn text_lowercase(&self) -> String {
+        self.0.to_lowercase()
+    }
+}
+
+impl Replace for BareToken {
+    fn replace<I: Iterator<Item = Self>>(_replaced: I, data: String) -> Self {
+        BareToken(data)
+    }
+}
+
 // Poor man's tokenizer
-let stream = tokenize("I have two hundreds and twenty dollars in my pocket").collect();
+let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| BareToken(s.to_string())).collect();
 
 let processed_stream = rewrite_numbers(stream, &en, 10.0);
 
 assert_eq!(
-    processed_stream.iter().map(|token| token.text.as_str()).collect::<Vec<_>>(),
-    vec!["I", " ", "have", " ", "220", " ", "dollars", " ", "in", " ", "my", " ", "pocket"]
+    processed_stream.into_iter().map(|t| t.0).collect::<Vec<_>>(),
+    vec!["I", "have", "220", "dollars", "in", "my", "pocket"]
 );
 ```
 
@@ -196,7 +214,6 @@ mod tokenizer;
 pub mod word_to_digit;
 
 pub use lang::{LangInterpretor, Language};
-pub use tokenizer::{tokenize, BasicToken};
 pub use word_to_digit::{
     find_numbers, find_numbers_iter, replace_numbers, rewrite_numbers, text2digits, Occurence,
     Replace, Token,
