@@ -288,16 +288,12 @@ impl LangInterpretor for Italian {
     fn is_linking(&self, word: &str) -> bool {
         INSIGNIFICANT.contains(word)
     }
-
-    fn is_ambiguous(&self, _number: &str) -> bool {
-        false
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::word_to_digit::{replace_numbers, text2digits};
+    use crate::word_to_digit::{replace_numbers_in_text, text2digits};
 
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
@@ -312,14 +308,14 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = Italian::default();
-            assert_eq!(replace_numbers($text, &f, 10.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 10.0), $res)
         };
     }
 
     macro_rules! assert_replace_all_numbers {
         ($text:expr, $res:expr) => {
             let f = Italian::default();
-            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 0.0), $res)
         };
     }
 

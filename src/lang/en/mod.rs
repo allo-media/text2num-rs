@@ -5,7 +5,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -162,15 +162,49 @@ impl LangInterpretor for English {
         INSIGNIFICANT.contains(word)
     }
 
-    fn is_ambiguous(&self, _number: &str) -> bool {
-        false
+    fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
+        let mut b = DigitString::new();
+        let significant_tokens_indices: Vec<usize> = tokens
+            .iter()
+            .enumerate()
+            .filter_map(|(i, t)| {
+                if !t.text_lowercase().chars().all(|c| c.is_ascii_whitespace()) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for (j, &i) in significant_tokens_indices.iter().enumerate() {
+            if tokens[i].text_lowercase() == "o" {
+                if j > 0
+                    && self
+                        .apply(
+                            tokens[significant_tokens_indices[j - 1]].text_lowercase(),
+                            &mut b,
+                        )
+                        .is_ok()
+                    || j + 1 < significant_tokens_indices.len()
+                        && self
+                            .apply(
+                                tokens[significant_tokens_indices[j + 1]].text_lowercase(),
+                                &mut b,
+                            )
+                            .is_ok()
+                {
+                    b.reset()
+                } else {
+                    tokens[i].set_nan(true);
+                }
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::English;
-    use crate::word_to_digit::{replace_numbers, text2digits};
+    use crate::word_to_digit::{replace_numbers_in_text, text2digits};
 
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
@@ -185,14 +219,14 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = English {};
-            assert_eq!(replace_numbers($text, &f, 10.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 10.0), $res)
         };
     }
 
     macro_rules! assert_replace_all_numbers {
         ($text:expr, $res:expr) => {
             let f = English {};
-            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 0.0), $res)
         };
     }
 
@@ -264,6 +298,8 @@ mod tests {
         assert_invalid!("five o");
         assert_invalid!("fifty zero three");
         assert_invalid!("fifty three zero");
+        assert_replace_all_numbers!("zero a b c", "0 a b c");
+        assert_replace_all_numbers!("o a b c", "o a b c");
     }
 
     #[test]

@@ -8,7 +8,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -237,15 +237,48 @@ impl LangInterpretor for French {
         INSIGNIFICANT.contains(word)
     }
 
-    fn is_ambiguous(&self, number: &str) -> bool {
-        number == "9"
+    fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
+        let mut iart_seen: Option<(&str, usize)> = None;
+        let mut num_wsp = 0;
+        let mut b = DigitString::new();
+        for (i, token) in tokens.iter_mut().enumerate() {
+            if token
+                .text_lowercase()
+                .chars()
+                .all(|c| c.is_ascii_whitespace())
+            {
+                if iart_seen.is_some() {
+                    num_wsp += 1;
+                }
+                continue;
+            }
+            if matches!(token.text_lowercase(), "un" | "le" | "du" | "l'") {
+                iart_seen.replace((token.text_lowercase(), i));
+                num_wsp = 0;
+            } else if token.text_lowercase() == "neuf" {
+                if let Some((art, pos)) = iart_seen.take() {
+                    let sep_words = i - pos - num_wsp - 1;
+                    match art {
+                        "un" => {
+                            if sep_words > 0 && sep_words < 3 {
+                                token.set_nan(true);
+                            }
+                        }
+                        _ if sep_words == 0 => token.set_nan(true),
+                        _ => (),
+                    }
+                }
+            } else if self.apply(token.text_lowercase(), &mut b).is_ok() {
+                iart_seen.take();
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::word_to_digit::{replace_numbers, text2digits};
+    use crate::word_to_digit::{replace_numbers_in_text, text2digits};
 
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
@@ -260,14 +293,14 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f, 7.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 7.0), $res)
         };
     }
 
     macro_rules! assert_replace_all_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 0.0), $res)
         };
     }
 
@@ -454,6 +487,7 @@ mod tests {
         assert_replace_numbers!("cinq cent unième", "501ème");
         assert_replace_numbers!("cinq cent premiers", "500 premiers");
         assert_replace_numbers!("cinq cent premier", "500 premier");
+        assert_replace_all_numbers!("une seconde", "une seconde");
     }
 
     #[test]
@@ -500,7 +534,7 @@ mod tests {
         assert_replace_numbers!("un peu moins", "un peu moins");
         // assert_replace_numbers!("onze c'est un peu plus", "11 c'est un peu plus");
 
-        assert_replace_numbers!("le logement neuf", "le logement neuf");
+        assert_replace_numbers!("le logement neuf", "le logement 9");
         assert_replace_numbers!("le logement neuf deux sept", "le logement 9 2 7");
     }
 

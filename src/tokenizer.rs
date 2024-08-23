@@ -4,6 +4,35 @@ use daachorse::{
     CharwiseDoubleArrayAhoCorasickBuilder, MatchKind,
 };
 
+#[derive(Debug)]
+pub struct BasicToken {
+    pub text: String,
+    pub lowercase: String,
+    pub nan: bool,
+}
+
+impl BasicToken {
+    pub fn new(text: &str) -> Self {
+        Self {
+            text: text.to_owned(),
+            lowercase: text.to_lowercase(),
+            nan: false,
+        }
+    }
+}
+
+impl PartialEq for BasicToken {
+    fn eq(&self, other: &Self) -> bool {
+        self.text == other.text
+    }
+}
+
+impl std::borrow::Borrow<str> for BasicToken {
+    fn borrow(&self) -> &str {
+        self.text.as_str()
+    }
+}
+
 /// Plain text tokenizer on word boundaries.
 #[derive(Debug)]
 pub struct Tokenize<'a> {
@@ -51,16 +80,16 @@ impl<'a> Tokenize<'a> {
 }
 
 impl<'a> Iterator for Tokenize<'a> {
-    type Item = &'a str;
+    type Item = BasicToken;
 
-    fn next(&mut self) -> Option<&'a str> {
+    fn next(&mut self) -> Option<BasicToken> {
         if let Some((pos, c)) = self.chars.next() {
             let end = if c.is_alphanumeric() {
                 self.match_word()
             } else {
                 self.match_sep()
             };
-            Some(&self.source[pos..end])
+            Some(BasicToken::new(&self.source[pos..end]))
         } else {
             None
         }
@@ -154,17 +183,17 @@ mod tests {
     #[test]
     fn test_tokenizer() {
         let src = "Here, some phrase: hello!";
-        let tokens: Vec<&str> = Tokenize::new(src).collect();
+        let tokens: Vec<BasicToken> = Tokenize::new(src).collect();
         dbg!(&tokens);
         assert_eq!(tokens.len(), 8);
-        assert_eq!(tokens[0], "Here");
-        assert_eq!(tokens[1], ", ");
-        assert_eq!(tokens[2], "some");
-        assert_eq!(tokens[3], " ");
-        assert_eq!(tokens[4], "phrase");
-        assert_eq!(tokens[5], ": ");
-        assert_eq!(tokens[6], "hello");
-        assert_eq!(tokens[7], "!");
+        assert_eq!(tokens[0].text, "Here");
+        assert_eq!(tokens[1].text, ", ");
+        assert_eq!(tokens[2].text, "some");
+        assert_eq!(tokens[3].text, " ");
+        assert_eq!(tokens[4].text, "phrase");
+        assert_eq!(tokens[5].text, ": ");
+        assert_eq!(tokens[6].text, "hello");
+        assert_eq!(tokens[7].text, "!");
     }
 
     #[test]
