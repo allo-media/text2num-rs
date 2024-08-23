@@ -47,7 +47,7 @@ impl LangInterpretor for English {
                 Err(err) => Err(err),
             };
         }
-        let lemma = dbg!(lemmatize(num_func));
+        let lemma = lemmatize(num_func);
         let status = match lemma {
             "zero" | "o" | "nought" => b.put(b"0"),
             "one" | "first" | "oneth" if b.peek(2) != b"10" => b.put(b"1"),
@@ -101,7 +101,7 @@ impl LangInterpretor for English {
             b.marker = self.get_morph_marker(num_func);
             b.freeze();
         }
-        dbg!(status)
+        status
     }
 
     fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {

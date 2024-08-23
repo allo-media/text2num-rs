@@ -218,6 +218,14 @@ macro_rules! delegate {
                 )*
             }
         }
+
+        fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
+            match self {
+                $(
+                    Language::$variant(l) => l.basic_annotate(tokens),
+                )*
+            }
+        }
     };
 }
 
