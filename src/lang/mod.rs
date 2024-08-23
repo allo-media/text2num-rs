@@ -40,6 +40,11 @@ pub use fr::French;
 pub use it::Italian;
 pub use nl::Dutch;
 
+pub trait BasicAnnotate {
+    fn text_lowercase(&self) -> &str;
+    fn set_nan(&mut self, val: bool);
+}
+
 /// Model the Morphological markers that differenciate ordinals or fractions from cardinals,
 /// and that must be retained on the digit form.
 ///
@@ -102,8 +107,6 @@ pub trait LangInterpretor {
     /// that separate unrelated numbers. So the method would return `false` for them.
     /// This function is used to find isolate numbers.
     fn is_linking(&self, word: &str) -> bool;
-    /// In some languages, numbers can be homonyms to other words
-    fn is_ambiguous(&self, number: &str) -> bool;
     /// Process the `group` as all or nothing.
     fn exec_group<'a, I: Iterator<Item = &'a str>>(&self, group: I) -> Result<DigitString, Error> {
         let mut b = DigitString::new();
@@ -121,6 +124,8 @@ pub trait LangInterpretor {
             Ok(b)
         }
     }
+
+    fn basic_annotate<T: BasicAnnotate>(&self, _tokens: &mut Vec<T>) {}
 }
 
 /// A convenience enum that encapsulates the builtin languages in a single type.
@@ -214,14 +219,13 @@ macro_rules! delegate {
             }
         }
 
-        fn is_ambiguous(&self, number: &str) -> bool {
+        fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
             match self {
                 $(
-                    Language::$variant(l) => l.is_ambiguous(number),
+                    Language::$variant(l) => l.basic_annotate(tokens),
                 )*
             }
         }
-
     };
 }
 
