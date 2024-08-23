@@ -116,8 +116,8 @@ impl Token for &BareToken {
         self.0.as_ref()
     }
 
-    fn text_lowercase(&self) -> String {
-        self.0.to_lowercase()
+    fn text_lowercase(&self) -> &str {
+        self.0.as_ref()
     }
 }
 
@@ -157,8 +157,8 @@ impl Token for DecodedWord<'_> {
         self.text
     }
 
-    fn text_lowercase(&self) -> String {
-        self.text.to_lowercase()
+    fn text_lowercase(&self) -> &str {
+        self.text
     }
 
     fn nt_separated(&self, previous: &Self) -> bool {
@@ -215,8 +215,8 @@ pub mod word_to_digit;
 
 pub use lang::{LangInterpretor, Language};
 pub use word_to_digit::{
-    find_numbers, find_numbers_iter, replace_numbers_in_text, replace_numbers_in_stream, text2digits, Occurence,
-    Replace, Token,
+    find_numbers, find_numbers_iter, replace_numbers_in_stream, replace_numbers_in_text,
+    text2digits, Occurence, Replace, Token,
 };
 
 /// Get an interpreter for the language represented by the `language_code` ISO code.

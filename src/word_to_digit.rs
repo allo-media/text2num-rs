@@ -89,7 +89,7 @@ pub trait Token {
     /// The text of the word or symbol (e.g. punctuation) represented by this token
     fn text(&self) -> &str;
     /// The lowercase representation of the word represented by this token
-    fn text_lowercase(&self) -> String;
+    fn text_lowercase(&self) -> &str;
     /**
     In some token streams (e.g. ASR output), there is no punctuation
     tokens to separate words that must be undestood separately, but
@@ -113,8 +113,8 @@ pub trait Token {
             self.text
         }
 
-        fn text_lowercase(&self) -> String {
-            self.text.to_lowercase()
+        fn text_lowercase(&self) -> &str {
+            self.text
         }
 
         fn nt_separated(&self, previous: &Self) -> bool {
@@ -166,8 +166,8 @@ impl Token for &BasicToken {
         self.text.as_str()
     }
 
-    fn text_lowercase(&self) -> String {
-        self.text.to_lowercase()
+    fn text_lowercase(&self) -> &str {
+        self.lowercase.as_str()
     }
 
     fn nt_separated(&self, _previous: &Self) -> bool {
@@ -182,6 +182,7 @@ impl Token for &BasicToken {
 impl Replace for BasicToken {
     fn replace<I: Iterator<Item = Self>>(_replaced: I, data: String) -> Self {
         Self {
+            lowercase: data.to_lowercase(),
             text: data,
             nan: false,
         }
@@ -525,8 +526,8 @@ mod tests {
             self.text.as_str()
         }
 
-        fn text_lowercase(&self) -> String {
-            self.text.to_lowercase()
+        fn text_lowercase(&self) -> &str {
+            &self.lowercase.as_str()
         }
 
         fn nt_separated(&self, _previous: &Self) -> bool {

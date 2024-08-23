@@ -7,6 +7,7 @@ use daachorse::{
 #[derive(Debug)]
 pub struct BasicToken {
     pub text: String,
+    pub lowercase: String,
     pub nan: bool,
 }
 
@@ -14,6 +15,7 @@ impl BasicToken {
     pub fn new(text: &str) -> Self {
         Self {
             text: text.to_owned(),
+            lowercase: text.to_lowercase(),
             nan: false,
         }
     }
