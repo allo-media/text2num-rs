@@ -8,7 +8,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -237,35 +237,38 @@ impl LangInterpretor for French {
         INSIGNIFICANT.contains(word)
     }
 
-    fn basic_annotate(&self, tokens: &mut Vec<crate::tokenizer::BasicToken>) {
-        let mut iart_seen: Option<(String, usize)> = None;
+    fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
+        let mut iart_seen: Option<(&str, usize)> = None;
         let mut num_wsp = 0;
         let mut b = DigitString::new();
         for (i, token) in tokens.iter_mut().enumerate() {
-            if token.text.chars().all(|c| c.is_ascii_whitespace()) {
+            if token
+                .text_lowercase()
+                .chars()
+                .all(|c| c.is_ascii_whitespace())
+            {
                 if iart_seen.is_some() {
                     num_wsp += 1;
                 }
                 continue;
             }
-            let lo = token.text.to_lowercase();
-            if lo == "un" || lo == "le" || lo == "du" || lo == "l'" {
-                iart_seen.replace((lo, i));
+            if matches!(token.text_lowercase(), "un" | "le" | "du" | "l'") {
+                iart_seen.replace((token.text_lowercase(), i));
                 num_wsp = 0;
-            } else if lo == "neuf" {
+            } else if token.text_lowercase() == "neuf" {
                 if let Some((art, pos)) = iart_seen.take() {
                     let sep_words = i - pos - num_wsp - 1;
-                    match art.as_str() {
+                    match art {
                         "un" => {
                             if sep_words > 0 && sep_words < 3 {
-                                token.nan = true
+                                token.set_nan(true);
                             }
                         }
-                        _ if sep_words == 0 => token.nan = true,
+                        _ if sep_words == 0 => token.set_nan(true),
                         _ => (),
                     }
                 }
-            } else if self.apply(&lo, &mut b).is_ok() {
+            } else if self.apply(token.text_lowercase(), &mut b).is_ok() {
                 iart_seen.take();
             }
         }
@@ -484,6 +487,7 @@ mod tests {
         assert_replace_numbers!("cinq cent unième", "501ème");
         assert_replace_numbers!("cinq cent premiers", "500 premiers");
         assert_replace_numbers!("cinq cent premier", "500 premier");
+        assert_replace_all_numbers!("une seconde", "une seconde");
     }
 
     #[test]

@@ -9,7 +9,7 @@ use std::iter::Enumerate;
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
-use crate::lang::LangInterpretor;
+use crate::lang::{BasicAnnotate, LangInterpretor};
 use crate::tokenizer::{tokenize, BasicToken};
 
 struct WordToDigitParser<'a, T: LangInterpretor> {
@@ -189,6 +189,16 @@ impl Replace for BasicToken {
     }
 }
 
+impl BasicAnnotate for BasicToken {
+    fn text_lowercase(&self) -> &str {
+        self.lowercase.as_str()
+    }
+
+    fn set_nan(&mut self, val: bool) {
+        self.nan = val
+    }
+}
+
 #[derive(Debug)]
 /// This type describes a number found in a token stream.
 pub struct Occurence {
@@ -360,10 +370,10 @@ where
             if self.parser.has_number() && token.nt_separated(prev) {
                 "," // force stop without loosing token (see below)
             } else {
-                &lo_token
+                lo_token
             }
         } else {
-            &lo_token
+            lo_token
         };
         match self.parser.push(test) {
             // Set match_start on first successful parse
@@ -375,7 +385,7 @@ where
             Err(_) if self.parser.has_number() => {
                 self.number_end();
                 // The end of that match may be the start of another
-                if self.parser.push(&lo_token).is_ok() {
+                if self.parser.push(lo_token).is_ok() {
                     self.tracker.number_advanced(pos);
                 } else {
                     self.outside_number(&token)

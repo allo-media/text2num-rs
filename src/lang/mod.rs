@@ -30,7 +30,6 @@ mod it;
 mod nl;
 
 use crate::digit_string::DigitString;
-use crate::tokenizer::BasicToken;
 
 use crate::error::Error;
 
@@ -40,6 +39,11 @@ pub use es::Spanish;
 pub use fr::French;
 pub use it::Italian;
 pub use nl::Dutch;
+
+pub trait BasicAnnotate {
+    fn text_lowercase(&self) -> &str;
+    fn set_nan(&mut self, val: bool);
+}
 
 /// Model the Morphological markers that differenciate ordinals or fractions from cardinals,
 /// and that must be retained on the digit form.
@@ -121,7 +125,7 @@ pub trait LangInterpretor {
         }
     }
 
-    fn basic_annotate(&self, _tokens: &mut Vec<BasicToken>) {}
+    fn basic_annotate<T: BasicAnnotate>(&self, _tokens: &mut Vec<T>) {}
 }
 
 /// A convenience enum that encapsulates the builtin languages in a single type.

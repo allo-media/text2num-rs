@@ -5,7 +5,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -162,14 +162,13 @@ impl LangInterpretor for English {
         INSIGNIFICANT.contains(word)
     }
 
-    fn basic_annotate(&self, tokens: &mut Vec<crate::tokenizer::BasicToken>) {
+    fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
         let mut b = DigitString::new();
-        println!("{:?}", tokens);
         let significant_tokens_indices: Vec<usize> = tokens
             .iter()
             .enumerate()
             .filter_map(|(i, t)| {
-                if !t.text.chars().all(|c| c.is_ascii_whitespace()) {
+                if !t.text_lowercase().chars().all(|c| c.is_ascii_whitespace()) {
                     Some(i)
                 } else {
                     None
@@ -177,23 +176,28 @@ impl LangInterpretor for English {
             })
             .collect();
         for (j, &i) in significant_tokens_indices.iter().enumerate() {
-            if tokens[i].text == "o" {
+            if tokens[i].text_lowercase() == "o" {
                 if j > 0
                     && self
-                        .apply(&tokens[significant_tokens_indices[j - 1]].text, &mut b)
+                        .apply(
+                            tokens[significant_tokens_indices[j - 1]].text_lowercase(),
+                            &mut b,
+                        )
                         .is_ok()
                     || j + 1 < significant_tokens_indices.len()
                         && self
-                            .apply(&tokens[significant_tokens_indices[j + 1]].text, &mut b)
+                            .apply(
+                                tokens[significant_tokens_indices[j + 1]].text_lowercase(),
+                                &mut b,
+                            )
                             .is_ok()
                 {
                     b.reset()
                 } else {
-                    tokens[i].nan = true;
+                    tokens[i].set_nan(true);
                 }
             }
         }
-        println!("{:?}", tokens);
     }
 }
 
