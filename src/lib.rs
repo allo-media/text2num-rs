@@ -213,7 +213,7 @@ pub mod lang;
 mod tokenizer;
 pub mod word_to_digit;
 
-pub use lang::{LangInterpretor, Language};
+pub use lang::{BasicAnnotate, LangInterpretor, Language};
 pub use word_to_digit::{
     find_numbers, find_numbers_iter, replace_numbers_in_stream, replace_numbers_in_text,
     text2digits, Occurence, Replace, Token,
