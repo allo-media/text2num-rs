@@ -275,7 +275,7 @@ impl LangInterpretor for French {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::word_to_digit::{replace_numbers, text2digits};
+    use crate::word_to_digit::{replace_numbers_in_text, text2digits};
 
     macro_rules! assert_text2digits {
         ($text:expr, $res:expr) => {
@@ -290,14 +290,14 @@ mod tests {
     macro_rules! assert_replace_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f, 7.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 7.0), $res)
         };
     }
 
     macro_rules! assert_replace_all_numbers {
         ($text:expr, $res:expr) => {
             let f = French {};
-            assert_eq!(replace_numbers($text, &f, 0.0), $res)
+            assert_eq!(replace_numbers_in_text($text, &f, 0.0), $res)
         };
     }
 

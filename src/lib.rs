@@ -74,19 +74,19 @@ As isolated smaller numbers may be easier to read in plain text, you can specify
 not replaced.
 
 ```rust
-use text2num::{Language, replace_numbers};
+use text2num::{Language, replace_numbers_in_text};
 
 let en = Language::english();
 
 let sentence = "Let me show you two things: first, isolated numbers are treated differently than groups like one, two, three. And then, that decimal numbers like three point one four one five are well understood.";
 
 assert_eq!(
-    replace_numbers(sentence, &en, 10.0),
+    replace_numbers_in_text(sentence, &en, 10.0),
     "Let me show you two things: first, isolated numbers are treated differently than groups like 1, 2, 3. And then, that decimal numbers like 3.1415 are well understood."
 );
 
 assert_eq!(
-    replace_numbers(sentence, &en, 0.0),
+    replace_numbers_in_text(sentence, &en, 0.0),
     "Let me show you 2 things: 1st, isolated numbers are treated differently than groups like 1, 2, 3. And then, that decimal numbers like 3.1415 are well understood."
 );
 ```
@@ -105,7 +105,7 @@ The `text2num` library can process those streams as long as the token type imple
 The `Token` trait is already implemented for the [`BasicToken`] type, so we can show a simple example with `String` streams:
 
 ```rust
-use text2num::{rewrite_numbers, Language, Token, Replace};
+use text2num::{replace_numbers_in_stream, Language, Token, Replace};
 
 let en = Language::english();
 
@@ -130,7 +130,7 @@ impl Replace for BareToken {
 // Poor man's tokenizer
 let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| BareToken(s.to_string())).collect();
 
-let processed_stream = rewrite_numbers(stream, &en, 10.0);
+let processed_stream = replace_numbers_in_stream(stream, &en, 10.0);
 
 assert_eq!(
     processed_stream.into_iter().map(|t| t.0).collect::<Vec<_>>(),
@@ -215,7 +215,7 @@ pub mod word_to_digit;
 
 pub use lang::{LangInterpretor, Language};
 pub use word_to_digit::{
-    find_numbers, find_numbers_iter, replace_numbers, rewrite_numbers, text2digits, Occurence,
+    find_numbers, find_numbers_iter, replace_numbers_in_text, replace_numbers_in_stream, text2digits, Occurence,
     Replace, Token,
 };
 
@@ -234,13 +234,13 @@ pub fn get_interpretor_for(language_code: &str) -> Option<Language> {
 
 #[cfg(test)]
 mod tests {
-    use super::{replace_numbers, Language};
+    use super::{replace_numbers_in_text, Language};
 
     #[test]
     fn test_access_fr() {
         let french = Language::french();
         assert_eq!(
-            replace_numbers(
+            replace_numbers_in_text(
                 "Pour la cinquième fois: vingt-cinq plus quarante-huit égalent soixante-treize",
                 &french,
                 0.0
@@ -253,7 +253,7 @@ mod tests {
     fn test_zeros_fr() {
         let french = Language::french();
         assert_eq!(
-            replace_numbers("zéro zéro trente quatre vingt", &french, 10.),
+            replace_numbers_in_text("zéro zéro trente quatre vingt", &french, 10.),
             "0034 20"
         );
     }
@@ -262,7 +262,7 @@ mod tests {
     fn test_access_en() {
         let english = Language::english();
         assert_eq!(
-            replace_numbers(
+            replace_numbers_in_text(
                 "For the fifth time: twenty-five plus fourty-eight equal seventy-three",
                 &english,
                 0.0

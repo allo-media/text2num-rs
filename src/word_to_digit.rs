@@ -490,7 +490,7 @@ where
 
 /// Find spelled numbers (including decimal) in the token stream and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-pub fn rewrite_numbers<'a, L, T>(mut input: Vec<T>, lang: &L, threshold: f64) -> Vec<T>
+pub fn replace_numbers_in_stream<'a, L, T>(mut input: Vec<T>, lang: &L, threshold: f64) -> Vec<T>
 where
     L: LangInterpretor,
     T: Replace + 'a,
@@ -503,10 +503,10 @@ where
 
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-pub fn replace_numbers<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
+pub fn replace_numbers_in_text<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
     let mut tokens = tokenize(text).collect();
     lang.basic_annotate(&mut tokens);
-    let out = rewrite_numbers(tokens, lang, threshold);
+    let out = replace_numbers_in_stream(tokens, lang, threshold);
     out.join("")
 }
 
@@ -552,7 +552,7 @@ mod tests {
     #[test]
     fn test_grouping() {
         let fr = Language::french();
-        let wyget = replace_numbers("zéro zéro trente quatre-vingt-dix-sept", &fr, 10.0);
+        let wyget = replace_numbers_in_text("zéro zéro trente quatre-vingt-dix-sept", &fr, 10.0);
         assert_eq!(wyget, "0030 97");
     }
 
@@ -598,7 +598,7 @@ mod tests {
         let fr = Language::french();
         // increase to bench
         for _ in 0..1 {
-            let wyget = replace_numbers(
+            let wyget = replace_numbers_in_text(
                 "Vingt-cinq vaches, douze poulets et cent vingt-cinq kg de pommes de terre.
             Mille deux cent soixante-six clous. zéro neuf soixante zéro six douze vingt et un.
             les uns et les autres ; une suite de chiffres : un, deux, trois !
