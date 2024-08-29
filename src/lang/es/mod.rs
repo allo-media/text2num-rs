@@ -98,7 +98,14 @@ impl LangInterpretor for Spanish {
             "seteciento" | "setecienta" | "septingentésimo" | "septingentésima" => b.put(b"700"),
             "ochociento" | "ochocienta" | "octingentésimo" | "octingentésima" => b.put(b"800"),
             "noveciento" | "novecienta" | "noningentésimo" | "noningentésima" => b.put(b"900"),
-            "mil" | "milésimo" | "milésima" if b.is_range_free(3, 5) => b.shift(3),
+            "mil" | "milésimo" | "milésima" if b.is_range_free(3, 5) => {
+                let peek = b.peek(2);
+                if peek == b"1" {
+                    Err(Error::Overlap)
+                } else {
+                    b.shift(3)
+                }
+            }
             "millon" | "millón" | "millonésimo" | "millonésima" if b.is_range_free(6, 8) => {
                 b.shift(6)
             }
@@ -315,6 +322,7 @@ mod tests {
         assert_invalid!("veinte cuarto");
         assert_invalid!("vigésimo decimocuarto");
         assert_invalid!("diez cuarto");
+        assert_invalid!("uno mil");
     }
 
     #[test]
