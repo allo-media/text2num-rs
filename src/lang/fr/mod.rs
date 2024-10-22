@@ -238,38 +238,43 @@ impl LangInterpretor for French {
     }
 
     fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
-        let mut iart_seen: Option<(&str, usize)> = None;
-        let mut num_wsp = 0;
         let mut b = DigitString::new();
-        for (i, token) in tokens.iter_mut().enumerate() {
-            if token
-                .text_lowercase()
-                .chars()
-                .all(|c| c.is_ascii_whitespace())
-            {
-                if iart_seen.is_some() {
-                    num_wsp += 1;
-                }
+        let mut true_words: Vec<usize> = Vec::with_capacity(tokens.len());
+        let mut ambiguous: Vec<usize> = Vec::new();
+        for (i, token) in tokens.iter().enumerate() {
+            if token.text_lowercase().chars().all(|c| !c.is_alphanumeric()) {
                 continue;
             }
-            if matches!(token.text_lowercase(), "un" | "le" | "du" | "l'") {
-                iart_seen.replace((token.text_lowercase(), i));
-                num_wsp = 0;
-            } else if token.text_lowercase() == "neuf" {
-                if let Some((art, pos)) = iart_seen.take() {
-                    let sep_words = i - pos - num_wsp - 1;
-                    match art {
-                        "un" => {
-                            if sep_words > 0 && sep_words < 3 {
-                                token.set_nan(true);
-                            }
-                        }
-                        _ if sep_words == 0 => token.set_nan(true),
-                        _ => (),
-                    }
+            if token.text_lowercase() == "neuf" {
+                ambiguous.push(true_words.len());
+            }
+            true_words.push(i);
+        }
+        for i in ambiguous {
+            if i < 2 {
+                continue;
+            }
+            if matches!(
+                tokens[true_words[i - 2]].text_lowercase(),
+                "un" | "le" | "du" | "l'"
+            ) || i > 2
+                && matches!(
+                    tokens[true_words[i - 3]].text_lowercase(),
+                    "un" | "le" | "du" | "l'"
+                )
+            {
+                let previous_text = tokens[true_words[i - 1]].text_lowercase();
+                let next_text = if (i + 1) < true_words.len() {
+                    tokens[true_words[i + 1]].text_lowercase()
+                } else {
+                    ""
+                };
+                if previous_text != "numéro"
+                    && self.apply(previous_text, &mut b).is_err()
+                    && self.apply(next_text, &mut b).is_err()
+                {
+                    tokens[true_words[i]].set_nan(true);
                 }
-            } else if self.apply(token.text_lowercase(), &mut b).is_ok() {
-                iart_seen.take();
             }
         }
     }
@@ -534,8 +539,12 @@ mod tests {
         assert_replace_numbers!("un peu moins", "un peu moins");
         // assert_replace_numbers!("onze c'est un peu plus", "11 c'est un peu plus");
 
-        assert_replace_numbers!("le logement neuf", "le logement 9");
+        assert_replace_numbers!("le logement neuf", "le logement neuf");
+        assert_replace_numbers!("le logement numéro neuf", "le logement numéro 9");
         assert_replace_numbers!("le logement neuf deux sept", "le logement 9 2 7");
+
+        assert_replace_all_numbers!("le neuf février", "le 9 février");
+        assert_replace_numbers!("le neuf février", "le 9 février");
     }
 
     #[test]
