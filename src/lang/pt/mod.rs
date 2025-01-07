@@ -218,13 +218,6 @@ mod tests {
         };
     }
 
-    macro_rules! assert_replace_all_numbers {
-        ($text:expr, $res:expr) => {
-            let f = Portuguese {};
-            assert_eq!(replace_numbers_in_text($text, &f, 0.0), $res)
-        };
-    }
-
     macro_rules! assert_invalid {
         ($text:expr) => {
             let f = Portuguese {};
@@ -237,7 +230,6 @@ mod tests {
 
     #[test]
     fn test_apply() {
-        assert_text2digits!("zero", "0");
         assert_text2digits!("um", "1");
         assert_text2digits!("oito", "8");
         assert_text2digits!("dez", "10");

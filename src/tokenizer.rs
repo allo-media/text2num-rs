@@ -79,7 +79,7 @@ impl<'a> Tokenize<'a> {
     }
 }
 
-impl<'a> Iterator for Tokenize<'a> {
+impl Iterator for Tokenize<'_> {
     type Item = BasicToken;
 
     fn next(&mut self) -> Option<BasicToken> {

@@ -493,6 +493,7 @@ mod tests {
         assert_replace_numbers!("cinq cent premiers", "500 premiers");
         assert_replace_numbers!("cinq cent premier", "500 premier");
         assert_replace_all_numbers!("une seconde", "une seconde");
+        assert_replace_numbers!("vingt-cinquième et trentième", "25ème et 30ème");
     }
 
     #[test]

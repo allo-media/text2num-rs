@@ -21,7 +21,7 @@ fn lemmatize(word: &str) -> &str {
         || word.ends_with("ten")
         || word.ends_with("tem")
     {
-        word.trim_end_matches(&['s', 'n', 'm', 'r'])
+        word.trim_end_matches(['s', 'n', 'm', 'r'])
     } else {
         word
     }
@@ -337,6 +337,7 @@ mod tests {
         assert_invalid!("zwanzig zweitausend");
         assert_invalid!("eine und zwanzig");
         assert_invalid!("eins und zwanzig");
+        assert_invalid!("neun zwanzig");
     }
 
     #[test]
@@ -379,6 +380,7 @@ mod tests {
         );
         assert_replace_numbers!("Einhundert und Ende", "100 und Ende");
         assert_replace_numbers!("Einhundert und und", "100 und und");
+        assert_replace_numbers!("neun zwanzig", "9 20");
     }
 
     #[test]

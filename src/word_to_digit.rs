@@ -428,7 +428,7 @@ where
     }
 }
 
-impl<'a, L, T, I> Iterator for FindNumbers<'a, L, T, I>
+impl<L, T, I> Iterator for FindNumbers<'_, L, T, I>
 where
     L: LangInterpretor,
     T: Token,
