@@ -28,6 +28,7 @@ mod es;
 mod fr;
 mod it;
 mod nl;
+mod pt;
 
 use crate::digit_string::DigitString;
 
@@ -39,6 +40,7 @@ pub use es::Spanish;
 pub use fr::French;
 pub use it::Italian;
 pub use nl::Dutch;
+pub use pt::Portuguese;
 
 pub trait BasicAnnotate {
     fn text_lowercase(&self) -> &str;
@@ -136,6 +138,7 @@ pub enum Language {
     Italian(Italian),
     Spanish(Spanish),
     Dutch(Dutch),
+    Portuguese(Portuguese),
 }
 
 impl Language {
@@ -161,6 +164,10 @@ impl Language {
 
     pub fn dutch() -> Self {
         Language::Dutch(Dutch::default())
+    }
+
+    pub fn portuguese() -> Self {
+        Language::Portuguese(Portuguese::default())
     }
 }
 
@@ -230,5 +237,5 @@ macro_rules! delegate {
 }
 
 impl LangInterpretor for Language {
-    delegate!(Dutch, French, English, German, Italian, Spanish);
+    delegate!(Dutch, French, English, German, Italian, Spanish, Portuguese);
 }

@@ -169,8 +169,14 @@ impl DigitString {
         position > max_pos || self.buffer[max_pos - position] == b'0'
     }
 
+    /// check strict emptiness, that is nothing, not event leading zeroes.
     pub fn is_empty(&self) -> bool {
         self.buffer.is_empty() && self.leading_zeroes == 0
+    }
+
+    /// check for emptiness or only leading zeroes
+    pub fn is_null(&self) -> bool {
+        self.buffer.is_empty()
     }
 
     pub fn len(&self) -> usize {
