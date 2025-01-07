@@ -32,7 +32,7 @@ bitflags! {
     }
 }
 
-/// pseud lemmatizer
+/// pseudo lemmatizer
 fn lemmatize(word: &str) -> &str {
     if word.ends_with('a') {
         word.trim_end_matches('a')
