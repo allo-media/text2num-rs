@@ -1,4 +1,4 @@
-//! Spanish number interpretor
+//! Spanish number interpreter
 use crate::digit_string::DigitString;
 use crate::error::Error;
 

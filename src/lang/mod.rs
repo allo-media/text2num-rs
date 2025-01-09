@@ -11,11 +11,11 @@ a subset of the language that is "simple" and consistent enough to be interprete
 A number expressed in words is then seen as a little program whose interpretation result is either a sequence of digits, if the number is valid, or an
 error.
 
-The common runtime for all interpretors is the [`DigitString`]. It provided the memory
+The common runtime for all interpreters is the [`DigitString`]. It provided the memory
 and the elementary functions to build a number in base 10 (even if the language to be interpreted counts otherwise).
 The `DigitString` is responsible for checking the validity of the constructed number at each step (i.e at each method call).
 
-The intepretor part, which is specific to each language, is built by implementing the `LangInterpretor` trait, which
+The intepretor part, which is specific to each language, is built by implementing the `Langinterpreter` trait, which
 translate each number word into a sequence of elementary instructions on a `DigitString`.
 
 A language is just an empty (stateless) type. Everything is provided by implementating the trait.

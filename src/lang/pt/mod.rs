@@ -1,4 +1,4 @@
-//! Spanish number interpretor
+//! Portuguese number interpreter
 //! Sources:
 //! - https://www.practiceportuguese.com/
 //! - http://www.portugaisfacile.fr/cours-pour-les-debutants/compter-en-portugais-les-nombres/

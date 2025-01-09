@@ -1,4 +1,4 @@
-//! English number interpretor
+//! English number interpreter
 
 use crate::digit_string::DigitString;
 use crate::error::Error;

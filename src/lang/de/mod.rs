@@ -1,6 +1,6 @@
-//! German number interpretor
+//! German number interpreter
 //!
-//! This interpretor is tolerant and accepts splitted words, that is "ein und zwanzig" is treated like "einundzwanzig", as
+//! This interpreter is tolerant and accepts splitted words, that is "ein und zwanzig" is treated like "einundzwanzig", as
 //! the main application, Speech-to-text recognition, may introduce spurious spaces.
 
 use bitflags::bitflags;

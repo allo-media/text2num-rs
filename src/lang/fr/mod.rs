@@ -1,4 +1,4 @@
-//! French number interpretor.
+//! French number interpreter.
 //!
 //! It supports regional variants.
 use bitflags::bitflags;

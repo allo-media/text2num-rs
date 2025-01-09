@@ -1,6 +1,6 @@
-//! Dutch number interpretor
+//! Dutch number interpreter
 //!
-//! This interpretor is tolerant and accepts splitted words, that is "negen en zeventig" is treated like "negenenzeventig", as
+//! This interpreter is tolerant and accepts splitted words, that is "negen en zeventig" is treated like "negenenzeventig", as
 //! the main application, Speech-to-text recognition, may introduce spurious spaces.
 
 use bitflags::bitflags;
