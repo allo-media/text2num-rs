@@ -75,7 +75,7 @@ impl MorphologicalMarker {
 ///
 /// All methods must be implemented except the [`exec_group`](Self::exec_group), which comes with a default implementation.
 /// Self must be stateless.
-pub trait LangInterpretor {
+pub trait LangInterpreter {
     /// Interpret the word `num_func`, that may be part of a larger sequence.
     ///
     /// `num_func` is interpreted by calling the appropriate methods on `b`.
@@ -236,6 +236,6 @@ macro_rules! delegate {
     };
 }
 
-impl LangInterpretor for Language {
+impl LangInterpreter for Language {
     delegate!(Dutch, French, English, German, Italian, Spanish, Portuguese);
 }

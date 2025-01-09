@@ -11,7 +11,7 @@ use crate::tokenizer::WordSplitter;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -68,7 +68,7 @@ impl German {
     }
 }
 
-impl LangInterpretor for German {
+impl LangInterpreter for German {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In German, numbers are compounded to form a group
         let lemma = lemmatize(num_func);

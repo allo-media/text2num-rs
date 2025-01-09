@@ -12,7 +12,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 #[derive(Default)]
@@ -47,7 +47,7 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
-impl LangInterpretor for Portuguese {
+impl LangInterpreter for Portuguese {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
         if !b.is_empty() && num_marker != b.marker {

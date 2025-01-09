@@ -8,7 +8,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -43,7 +43,7 @@ bitflags! {
     }
 }
 
-impl LangInterpretor for French {
+impl LangInterpreter for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In French, numbers can be compounded to form a group with "-"
         if num_func.contains('-') {

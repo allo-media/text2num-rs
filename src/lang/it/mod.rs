@@ -6,7 +6,7 @@ use crate::tokenizer::WordSplitter;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 pub struct Italian {
@@ -76,7 +76,7 @@ impl Italian {
     }
 }
 
-impl LangInterpretor for Italian {
+impl LangInterpreter for Italian {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let lemma = lemmatize(num_func);
         if self.word_splitter.is_splittable(lemma) {
