@@ -23,7 +23,7 @@ you can easily switch languages at runtime.
 
 Each builtin language support regional varieties automatically, so you don't need to specify a region.
 
-The language interpretors are stateless so you can reuse and share them.
+The language interpreters are stateless so you can reuse and share them.
 
 ```rust
 use text2num::{Language, text2digits};
@@ -53,7 +53,7 @@ match text2digits(utterance, &es) {
 
 When run, the above code should print `'ochenta y cinco' means 85 in Spanish` on the standard output.
 
-If you don't need to dynamically switch languages, you can directly use the appropriate interpretor instead of
+If you don't need to dynamically switch languages, you can directly use the appropriate interpreter instead of
 the `Language` type:
 
 ```
@@ -213,14 +213,14 @@ pub mod lang;
 mod tokenizer;
 pub mod word_to_digit;
 
-pub use lang::{BasicAnnotate, LangInterpretor, Language};
+pub use lang::{BasicAnnotate, LangInterpreter, Language};
 pub use word_to_digit::{
     find_numbers, find_numbers_iter, replace_numbers_in_stream, replace_numbers_in_text,
     text2digits, Occurence, Replace, Token,
 };
 
 /// Get an interpreter for the language represented by the `language_code` ISO code.
-pub fn get_interpretor_for(language_code: &str) -> Option<Language> {
+pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
     match language_code {
         "de" => Some(Language::german()),
         "en" => Some(Language::english()),

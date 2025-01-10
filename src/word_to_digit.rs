@@ -9,17 +9,17 @@ use std::iter::Enumerate;
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
-use crate::lang::{BasicAnnotate, LangInterpretor};
+use crate::lang::{BasicAnnotate, LangInterpreter};
 use crate::tokenizer::{tokenize, BasicToken};
 
-struct WordToDigitParser<'a, T: LangInterpretor> {
+struct WordToDigitParser<'a, T: LangInterpreter> {
     int_part: DigitString,
     dec_part: DigitString,
     is_dec: bool,
     lang: &'a T,
 }
 
-impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
+impl<'a, T: LangInterpreter> WordToDigitParser<'a, T> {
     pub fn new(lang: &'a T) -> Self {
         Self {
             int_part: DigitString::new(),
@@ -77,7 +77,7 @@ impl<'a, T: LangInterpretor> WordToDigitParser<'a, T> {
 
 /// Interpret the `text` as a integer number or ordinal, and translate it into digits.
 /// Return an error if the text couldn't be undestood as a valid number.
-pub fn text2digits<T: LangInterpretor>(text: &str, lang: &T) -> Result<String, Error> {
+pub fn text2digits<T: LangInterpreter>(text: &str, lang: &T) -> Result<String, Error> {
     match lang.exec_group(text.to_lowercase().split_whitespace()) {
         Ok(ds) => Ok(lang.format_and_value(&ds).0),
         Err(err) => Err(err),
@@ -324,7 +324,7 @@ impl NumTracker {
 /// It lazily consumes the token stream.
 pub struct FindNumbers<'a, L, T, I>
 where
-    L: LangInterpretor,
+    L: LangInterpreter,
     T: Token,
     I: Iterator<Item = (usize, T)>,
 {
@@ -338,7 +338,7 @@ where
 
 impl<'a, L, T, I> FindNumbers<'a, L, T, I>
 where
-    L: LangInterpretor,
+    L: LangInterpreter,
     T: Token,
     I: Iterator<Item = (usize, T)>,
 {
@@ -428,9 +428,9 @@ where
     }
 }
 
-impl<'a, L, T, I> Iterator for FindNumbers<'a, L, T, I>
+impl<L, T, I> Iterator for FindNumbers<'_, L, T, I>
 where
-    L: LangInterpretor,
+    L: LangInterpreter,
     T: Token,
     I: Iterator<Item = (usize, T)>,
 {
@@ -453,7 +453,7 @@ where
 
 /// Find spelled numbers (including decimal numbers) in the input token stream.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-fn track_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
+fn track_numbers<L: LangInterpreter, T: Token, I: Iterator<Item = T>>(
     input: I,
     lang: &L,
     threshold: f64,
@@ -470,7 +470,7 @@ The `threshold` drives the *lone number* policy: if a number is isolated — tha
 surrounded by significant non-number words — and lower than `threshold`, then it
 is ignored.
 */
-pub fn find_numbers<L: LangInterpretor, T: Token, I: Iterator<Item = T>>(
+pub fn find_numbers<L: LangInterpreter, T: Token, I: Iterator<Item = T>>(
     input: I,
     lang: &L,
     threshold: f64,
@@ -492,7 +492,7 @@ pub fn find_numbers_iter<L, T, I>(
     threshold: f64,
 ) -> FindNumbers<'_, L, T, Enumerate<I>>
 where
-    L: LangInterpretor,
+    L: LangInterpreter,
     T: Token,
     I: Iterator<Item = T>,
 {
@@ -503,7 +503,7 @@ where
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
 pub fn replace_numbers_in_stream<'a, L, T>(mut input: Vec<T>, lang: &L, threshold: f64) -> Vec<T>
 where
-    L: LangInterpretor,
+    L: LangInterpreter,
     T: Replace + 'a,
     for<'b> &'b T: Token,
 {
@@ -514,7 +514,7 @@ where
 
 /// Find spelled numbers (including decimal) in the `text` and replace them by their digit representation.
 /// Isolated digits strictly under `threshold` are not converted (set to 0.0 to convert everything).
-pub fn replace_numbers_in_text<L: LangInterpretor>(text: &str, lang: &L, threshold: f64) -> String {
+pub fn replace_numbers_in_text<L: LangInterpreter>(text: &str, lang: &L, threshold: f64) -> String {
     let mut tokens = tokenize(text).collect();
     lang.basic_annotate(&mut tokens);
     let out = replace_numbers_in_stream(tokens, lang, threshold);

@@ -1,6 +1,6 @@
-//! Dutch number interpretor
+//! Dutch number interpreter
 //!
-//! This interpretor is tolerant and accepts splitted words, that is "negen en zeventig" is treated like "negenenzeventig", as
+//! This interpreter is tolerant and accepts splitted words, that is "negen en zeventig" is treated like "negenenzeventig", as
 //! the main application, Speech-to-text recognition, may introduce spurious spaces.
 
 use bitflags::bitflags;
@@ -11,7 +11,7 @@ use crate::tokenizer::WordSplitter;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 bitflags! {
@@ -83,7 +83,7 @@ impl Dutch {
     }
 }
 
-impl LangInterpretor for Dutch {
+impl LangInterpreter for Dutch {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In Dutch, numbers are compounded to form a group
         if self.word_splitter.is_splittable(num_func) {

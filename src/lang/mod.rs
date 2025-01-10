@@ -11,11 +11,11 @@ a subset of the language that is "simple" and consistent enough to be interprete
 A number expressed in words is then seen as a little program whose interpretation result is either a sequence of digits, if the number is valid, or an
 error.
 
-The common runtime for all interpretors is the [`DigitString`]. It provided the memory
+The common runtime for all interpreters is the [`DigitString`]. It provided the memory
 and the elementary functions to build a number in base 10 (even if the language to be interpreted counts otherwise).
 The `DigitString` is responsible for checking the validity of the constructed number at each step (i.e at each method call).
 
-The intepretor part, which is specific to each language, is built by implementing the `LangInterpretor` trait, which
+The intepretor part, which is specific to each language, is built by implementing the `Langinterpreter` trait, which
 translate each number word into a sequence of elementary instructions on a `DigitString`.
 
 A language is just an empty (stateless) type. Everything is provided by implementating the trait.
@@ -28,6 +28,7 @@ mod es;
 mod fr;
 mod it;
 mod nl;
+mod pt;
 
 use crate::digit_string::DigitString;
 
@@ -39,6 +40,7 @@ pub use es::Spanish;
 pub use fr::French;
 pub use it::Italian;
 pub use nl::Dutch;
+pub use pt::Portuguese;
 
 pub trait BasicAnnotate {
     fn text_lowercase(&self) -> &str;
@@ -73,7 +75,7 @@ impl MorphologicalMarker {
 ///
 /// All methods must be implemented except the [`exec_group`](Self::exec_group), which comes with a default implementation.
 /// Self must be stateless.
-pub trait LangInterpretor {
+pub trait LangInterpreter {
     /// Interpret the word `num_func`, that may be part of a larger sequence.
     ///
     /// `num_func` is interpreted by calling the appropriate methods on `b`.
@@ -136,6 +138,7 @@ pub enum Language {
     Italian(Italian),
     Spanish(Spanish),
     Dutch(Dutch),
+    Portuguese(Portuguese),
 }
 
 impl Language {
@@ -161,6 +164,10 @@ impl Language {
 
     pub fn dutch() -> Self {
         Language::Dutch(Dutch::default())
+    }
+
+    pub fn portuguese() -> Self {
+        Language::Portuguese(Portuguese::default())
     }
 }
 
@@ -229,6 +236,6 @@ macro_rules! delegate {
     };
 }
 
-impl LangInterpretor for Language {
-    delegate!(Dutch, French, English, German, Italian, Spanish);
+impl LangInterpreter for Language {
+    delegate!(Dutch, French, English, German, Italian, Spanish, Portuguese);
 }

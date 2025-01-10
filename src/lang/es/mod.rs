@@ -1,10 +1,10 @@
-//! Spanish number interpretor
+//! Spanish number interpreter
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -27,7 +27,7 @@ impl Spanish {
     }
 }
 
-impl LangInterpretor for Spanish {
+impl LangInterpreter for Spanish {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         let num_marker = self.get_morph_marker(num_func);
         if !b.is_empty() && num_marker != b.marker && !num_marker.is_fraction() {
