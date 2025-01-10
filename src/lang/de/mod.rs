@@ -1,6 +1,6 @@
-//! German number interpretor
+//! German number interpreter
 //!
-//! This interpretor is tolerant and accepts splitted words, that is "ein und zwanzig" is treated like "einundzwanzig", as
+//! This interpreter is tolerant and accepts splitted words, that is "ein und zwanzig" is treated like "einundzwanzig", as
 //! the main application, Speech-to-text recognition, may introduce spurious spaces.
 
 use bitflags::bitflags;
@@ -11,7 +11,7 @@ use crate::tokenizer::WordSplitter;
 
 mod vocabulary;
 
-use super::{LangInterpretor, MorphologicalMarker};
+use super::{LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -21,7 +21,7 @@ fn lemmatize(word: &str) -> &str {
         || word.ends_with("ten")
         || word.ends_with("tem")
     {
-        word.trim_end_matches(&['s', 'n', 'm', 'r'])
+        word.trim_end_matches(['s', 'n', 'm', 'r'])
     } else {
         word
     }
@@ -68,7 +68,7 @@ impl German {
     }
 }
 
-impl LangInterpretor for German {
+impl LangInterpreter for German {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In German, numbers are compounded to form a group
         let lemma = lemmatize(num_func);
@@ -337,6 +337,7 @@ mod tests {
         assert_invalid!("zwanzig zweitausend");
         assert_invalid!("eine und zwanzig");
         assert_invalid!("eins und zwanzig");
+        assert_invalid!("neun zwanzig");
     }
 
     #[test]
@@ -379,6 +380,7 @@ mod tests {
         );
         assert_replace_numbers!("Einhundert und Ende", "100 und Ende");
         assert_replace_numbers!("Einhundert und und", "100 und und");
+        assert_replace_numbers!("neun zwanzig", "9 20");
     }
 
     #[test]

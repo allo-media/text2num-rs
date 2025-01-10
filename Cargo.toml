@@ -1,10 +1,10 @@
 [package]
 name = "text2num"
-version = "2.5.2"
+version = "2.6.0"
 authors = ["Allo-Media <contact@allo-media.fr>"]
 edition = "2021"
 license = "MIT"
-description = "Parse and convert numbers written in English, Dutch, Spanish, German, Italian or French into their digit representation."
+description = "Parse and convert numbers written in English, Dutch, Spanish, Portuguese, German, Italian or French into their digit representation."
 keywords = ["NLP", "words-to-numbers"]
 categories = ["text-processing"]
 repository = "https://github.com/allo-media/text2num-rs"

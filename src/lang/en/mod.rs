@@ -1,11 +1,11 @@
-//! English number interpretor
+//! English number interpreter
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
 mod vocabulary;
 
-use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -26,7 +26,7 @@ impl English {
     }
 }
 
-impl LangInterpretor for English {
+impl LangInterpreter for English {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In English, numbers can be compounded to form a group with "-"
         if num_func.contains('-') {

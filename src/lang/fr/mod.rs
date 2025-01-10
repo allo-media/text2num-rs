@@ -1,4 +1,4 @@
-//! French number interpretor.
+//! French number interpreter.
 //!
 //! It supports regional variants.
 use bitflags::bitflags;
@@ -8,7 +8,7 @@ use crate::error::Error;
 
 mod vocabulary;
 
-use super::{BasicAnnotate, LangInterpretor, MorphologicalMarker};
+use super::{BasicAnnotate, LangInterpreter, MorphologicalMarker};
 use vocabulary::INSIGNIFICANT;
 
 fn lemmatize(word: &str) -> &str {
@@ -43,7 +43,7 @@ bitflags! {
     }
 }
 
-impl LangInterpretor for French {
+impl LangInterpreter for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In French, numbers can be compounded to form a group with "-"
         if num_func.contains('-') {
@@ -493,6 +493,7 @@ mod tests {
         assert_replace_numbers!("cinq cent premiers", "500 premiers");
         assert_replace_numbers!("cinq cent premier", "500 premier");
         assert_replace_all_numbers!("une seconde", "une seconde");
+        assert_replace_numbers!("vingt-cinquième et trentième", "25ème et 30ème");
     }
 
     #[test]
