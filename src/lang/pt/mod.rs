@@ -170,8 +170,12 @@ impl LangInterpreter for Portuguese {
             _ => MorphologicalMarker::None,
         }
     }
-    fn is_decimal_sep(&self, word: &str) -> bool {
-        word == "vírgula"
+    fn check_decimal_separator(&self, word: &str) -> Option<char> {
+        if word == "vírgula" {
+            Some(',')
+        } else {
+            None
+        }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -184,11 +188,16 @@ impl LangInterpreter for Portuguese {
         }
     }
 
-    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
+    fn format_decimal_and_value(
+        &self,
+        int: &DigitString,
+        dec: &DigitString,
+        sep: char,
+    ) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{sint}.{sdec}").parse().unwrap();
-        (format!("{sint},{sdec}"), val)
+        (format!("{sint}{sep}{sdec}"), val)
     }
 
     fn is_linking(&self, word: &str) -> bool {

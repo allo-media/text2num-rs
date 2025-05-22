@@ -15,7 +15,7 @@ use crate::tokenizer::{tokenize, BasicToken};
 struct WordToDigitParser<'a, T: LangInterpreter> {
     int_part: DigitString,
     dec_part: DigitString,
-    is_dec: bool,
+    dec_separator: Option<char>,
     lang: &'a T,
 }
 
@@ -24,7 +24,7 @@ impl<'a, T: LangInterpreter> WordToDigitParser<'a, T> {
         Self {
             int_part: DigitString::new(),
             dec_part: DigitString::new(),
-            is_dec: false,
+            dec_separator: None,
             lang,
         }
     }
@@ -33,22 +33,24 @@ impl<'a, T: LangInterpreter> WordToDigitParser<'a, T> {
     pub fn reset(&mut self) {
         self.int_part.reset();
         self.dec_part.reset();
-        self.is_dec = false;
+        self.dec_separator = None;
     }
 
     pub fn push(&mut self, word: &str) -> Result<(), Error> {
-        let status = if self.is_dec {
+        let status = if self.dec_separator.is_some() {
             self.lang.apply_decimal(word, &mut self.dec_part)
         } else {
             self.lang.apply(word, &mut self.int_part)
         };
-        if status.is_err()
-            && !self.is_dec
-            && !self.int_part.is_empty()
-            && self.lang.is_decimal_sep(word)
-        {
-            self.is_dec = true;
-            Err(Error::Incomplete)
+        if status.is_err() && self.dec_separator.is_none() && !self.int_part.is_empty() {
+            // `word` is not empty and we assume its len is one
+            // remember that input must be NFC normalized
+            self.dec_separator = self.lang.check_decimal_separator(word);
+            if self.dec_separator.is_some() {
+                Err(Error::Incomplete)
+            } else {
+                status
+            }
         } else {
             status
         }
@@ -56,9 +58,10 @@ impl<'a, T: LangInterpreter> WordToDigitParser<'a, T> {
 
     /// Return representation and value and reset itself.
     pub fn string_and_value(&mut self) -> (String, f64) {
-        let res = if self.is_dec && !self.dec_part.is_empty() {
+        let res = if !self.dec_part.is_empty() {
+            let sep = self.dec_separator.unwrap();
             self.lang
-                .format_decimal_and_value(&self.int_part, &self.dec_part)
+                .format_decimal_and_value(&self.int_part, &self.dec_part, sep)
         } else {
             self.lang.format_and_value(&self.int_part)
         };

@@ -120,8 +120,12 @@ impl LangInterpreter for English {
         }
     }
 
-    fn is_decimal_sep(&self, word: &str) -> bool {
-        word == "point"
+    fn check_decimal_separator(&self, word: &str) -> Option<char> {
+        if word == "point" {
+            Some('.')
+        } else {
+            None
+        }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -134,7 +138,12 @@ impl LangInterpreter for English {
         }
     }
 
-    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
+    fn format_decimal_and_value(
+        &self,
+        int: &DigitString,
+        dec: &DigitString,
+        _sep: char,
+    ) -> (String, f64) {
         let irepr = int.to_string();
         let drepr = dec.to_string();
         let frepr = format!("{irepr}.{drepr}");
