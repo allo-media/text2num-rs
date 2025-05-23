@@ -43,8 +43,6 @@ impl<'a, T: LangInterpreter> WordToDigitParser<'a, T> {
             self.lang.apply(word, &mut self.int_part)
         };
         if status.is_err() && self.dec_separator.is_none() && !self.int_part.is_empty() {
-            // `word` is not empty and we assume its len is one
-            // remember that input must be NFC normalized
             self.dec_separator = self.lang.check_decimal_separator(word);
             if self.dec_separator.is_some() {
                 Err(Error::Incomplete)
