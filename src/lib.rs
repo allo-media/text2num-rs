@@ -102,7 +102,7 @@ The `text2num` library can process those streams as long as the token type imple
 
 # Example: substitutions in a token stream.
 
-The `Token` trait is already implemented for the [`BasicToken`] type, so we can show a simple example with `String` streams:
+We can show a simple example with `String` streams:
 
 ```rust
 use text2num::{replace_numbers_in_stream, Language, Token, Replace};

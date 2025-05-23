@@ -46,7 +46,7 @@ bitflags! {
 impl LangInterpreter for French {
     fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
         // In French, numbers can be compounded to form a group with "-"
-        if num_func.contains('-') {
+        if num_func.contains('-') && !num_func.starts_with("dix-") {
             return match self.exec_group(num_func.split('-')) {
                 Ok(ds) => {
                     if ds.len() > 3 && ds.len() <= 6 && !b.is_range_free(3, 5) {
@@ -116,6 +116,21 @@ impl LangInterpreter for French {
                 b"80" => b.fput(b"96"),
                 _ => b.put(b"16"),
             },
+            "dix-sept" | "dix-septième" => match b.peek(2) {
+                b"60" => b.fput(b"77"),
+                b"80" => b.fput(b"97"),
+                _ => b.put(b"17"),
+            },
+            "dix-huit" | "dix-huitième" => match b.peek(2) {
+                b"60" => b.fput(b"78"),
+                b"80" => b.fput(b"98"),
+                _ => b.put(b"18"),
+            },
+            "dix-neuf" | "dix-neuvième" => match b.peek(2) {
+                b"60" => b.fput(b"79"),
+                b"80" => b.fput(b"99"),
+                _ => b.put(b"19"),
+            },
             "vingt" | "vingtième" => match b.peek(2) {
                 b"04" | b"4" => b.fput(b"80"),
                 _ => {
@@ -171,8 +186,24 @@ impl LangInterpreter for French {
                     b.shift(3)
                 }
             }
-            "million" | "millionième" if b.is_range_free(6, 8) => b.shift(6),
-            "milliard" | "milliardième" => b.shift(9),
+            "million" if b.is_range_free(6, 8) => b.shift(6),
+            "millionième" if b.is_range_free(6, 8) => {
+                let peek = b.peek(2);
+                if peek == b"1" {
+                    Err(Error::Overlap)
+                } else {
+                    b.shift(6)
+                }
+            }
+            "milliard" => b.shift(9),
+            "milliardième" => {
+                let peek = b.peek(2);
+                if peek == b"1" {
+                    Err(Error::Overlap)
+                } else {
+                    b.shift(9)
+                }
+            }
             "et" if b.len() >= 2 => Err(Error::Incomplete),
 
             _ => Err(Error::NaN),
@@ -194,8 +225,12 @@ impl LangInterpreter for French {
         self.apply(decimal_func, b)
     }
 
-    fn is_decimal_sep(&self, word: &str) -> bool {
-        word == "virgule"
+    fn check_decimal_separator(&self, word: &str) -> Option<char> {
+        if word == "virgule" {
+            Some(',')
+        } else {
+            None
+        }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -208,11 +243,16 @@ impl LangInterpreter for French {
         }
     }
 
-    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
+    fn format_decimal_and_value(
+        &self,
+        int: &DigitString,
+        dec: &DigitString,
+        sep: char,
+    ) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{sint}.{sdec}").parse().unwrap();
-        (format!("{sint},{sdec}"), val)
+        (format!("{sint}{sep}{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
@@ -349,10 +389,12 @@ mod tests {
 
         assert_text2digits!("quatre-vingt-cinq", "85");
         assert_text2digits!("quatre vingt cinq", "85");
+        assert_text2digits!("quatre-vingt cinq", "85");
 
         assert_text2digits!("quatre vingt un", "81");
 
         assert_text2digits!("quinze", "15");
+        assert_text2digits!("dix-sept", "17");
 
         assert_text2digits!("soixante quinze mille", "75000");
         assert_text2digits!("cent un mille", "101000");
@@ -363,6 +405,7 @@ mod tests {
     fn test_apply_variants() {
         assert_text2digits!("quatre vingt dix huit", "98");
         assert_text2digits!("quatre-vingt-dix-huit", "98");
+        assert_text2digits!("quatre-vingt dix-huit", "98");
         assert_text2digits!("nonante huit", "98");
         assert_text2digits!("nonante-huit", "98");
         assert_text2digits!("soixante dix huit", "78");
@@ -418,7 +461,6 @@ mod tests {
         assert_invalid!("vingtième cinq");
         assert_invalid!("vingt un");
         assert_invalid!("zéro zéro trente quatre vingt");
-        assert_invalid!("quatre-vingt dix-huit");
         assert_invalid!("mille un cent");
     }
 
@@ -487,6 +529,8 @@ mod tests {
             "Cinquième deuxième troisième vingt et unième centième mille deux cent trentième.",
             "5ème 2ème 3ème 21ème 100ème 1230ème."
         );
+        assert_replace_numbers!("dix-neuvième", "19ème");
+        assert_replace_numbers!("quatre-vingt dix-septième", "97ème");
         assert_replace_numbers!("première seconde", "première seconde");
         assert_replace_numbers!("premier second", "premier second");
         assert_replace_numbers!("cinq cent unième", "501ème");
@@ -494,6 +538,10 @@ mod tests {
         assert_replace_numbers!("cinq cent premier", "500 premier");
         assert_replace_all_numbers!("une seconde", "une seconde");
         assert_replace_numbers!("vingt-cinquième et trentième", "25ème et 30ème");
+        assert_replace_numbers!("un centième", "un 100ème");
+        assert_replace_numbers!("un millième", "un 1000ème");
+        assert_replace_numbers!("le millionième", "le 1000000ème");
+        assert_replace_numbers!("un millionième", "un 1000000ème");
     }
 
     #[test]

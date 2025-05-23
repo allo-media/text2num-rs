@@ -120,8 +120,12 @@ impl LangInterpreter for English {
         }
     }
 
-    fn is_decimal_sep(&self, word: &str) -> bool {
-        word == "point"
+    fn check_decimal_separator(&self, word: &str) -> Option<char> {
+        if word == "point" {
+            Some('.')
+        } else {
+            None
+        }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -134,7 +138,12 @@ impl LangInterpreter for English {
         }
     }
 
-    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
+    fn format_decimal_and_value(
+        &self,
+        int: &DigitString,
+        dec: &DigitString,
+        _sep: char,
+    ) -> (String, f64) {
         let irepr = int.to_string();
         let drepr = dec.to_string();
         let frepr = format!("{irepr}.{drepr}");
@@ -300,6 +309,10 @@ mod tests {
         assert_invalid!("fifty three zero");
         assert_replace_all_numbers!("zero a b c", "0 a b c");
         assert_replace_all_numbers!("o a b c", "o a b c");
+        assert_replace_all_numbers!(
+            "Please call me at one two three four five six seven eight nine zero in reference to ticket C F zero three two zero seven eight two",
+            "Please call me at 1 2 3 4 5 6 7 8 9 0 in reference to ticket C F 03 2 07 8 2"
+        );
     }
 
     #[test]
