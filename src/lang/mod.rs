@@ -91,15 +91,14 @@ pub trait LangInterpreter {
     ///
     /// For example, in English, ordinals bear the suffix `th`, that is kept on the digit form too: "*tenth*" -> "*10th*".
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker;
-    /// Return Some(symbol) if the `word` may represent a decimal separator in the language, figured as `symbol`.
+    /// Return `Some(symbol)` if the `word` represents a decimal separator in the language, figured as `symbol`.
     ///
-    /// For example `"point"` is a decimal separator in English, figured as '.'
+    /// For example "*point*" is a decimal separator in English, figured as `'.'`
     fn check_decimal_separator(&self, word: &str) -> Option<char>;
     /// Format `b` as digit string and evaluate it, according to the language's rules.
     fn format_and_value(&self, b: &DigitString) -> (String, f64);
-    /// Format the decimal number given as integral part `int` and decimals `dec` according the the language's rules.
-    ///
-    /// Also return its value as float.
+    /// Format the decimal number given as integral part `int` and decimals `dec` according the the language's rules
+    /// and using the decimal separator `sep` (previously returned by [`Self::check_decimal_separator()`])
     fn format_decimal_and_value(
         &self,
         int: &DigitString,

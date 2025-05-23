@@ -1,9 +1,9 @@
 //! Portuguese number interpreter
 //! Sources:
-//! - https://www.practiceportuguese.com/
-//! - http://www.portugaisfacile.fr/cours-pour-les-debutants/compter-en-portugais-les-nombres/
-//! - https://www.dicio.com.br/como-escrever-numeros-por-extenso/
-//! - https://exoportugais.blogspot.com/2012/12/nombres-ordinaux-en-portugais.html
+//! - <https://www.practiceportuguese.com/>
+//! - <http://www.portugaisfacile.fr/cours-pour-les-debutants/compter-en-portugais-les-nombres/>
+//! - <https://www.dicio.com.br/como-escrever-numeros-por-extenso/>
+//! - <https://exoportugais.blogspot.com/2012/12/nombres-ordinaux-en-portugais.html>
 
 use bitflags::bitflags;
 
