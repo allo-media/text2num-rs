@@ -87,7 +87,7 @@ impl LangInterpreter for Spanish {
             "setenta" | "septuagésimo" | "septuagésima" | "setentavo" => b.put(b"70"),
             "ochenta" | "octogésimo" | "octogésima" | "ochentavo" => b.put(b"80"),
             "noventa" | "nonagésimo" | "nonagésima" | "noventavo" => b.put(b"90"),
-            "cien" | "ciento" | "cienta" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
+            "cien" | "ciento" | "centésimo" | "centésima" | "centavo" => b.put(b"100"),
             "dosciento" | "doscienta" | "ducentésimo" | "ducentésima" => b.put(b"200"),
             "tresciento" | "trescienta" | "tricentésimo" | "tricentésima" => b.put(b"300"),
             "cuatrociento" | "cuatrocienta" | "quadringentésimo" | "quadringentésima" => {
@@ -126,8 +126,12 @@ impl LangInterpreter for Spanish {
         self.apply(decimal_func, b)
     }
 
-    fn is_decimal_sep(&self, word: &str) -> bool {
-        word == "coma"
+    fn check_decimal_separator(&self, word: &str) -> Option<char> {
+        match word {
+            "coma" => Some(','),
+            "punto" => Some('.'),
+            _ => None,
+        }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -140,11 +144,16 @@ impl LangInterpreter for Spanish {
         }
     }
 
-    fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString) -> (String, f64) {
+    fn format_decimal_and_value(
+        &self,
+        int: &DigitString,
+        dec: &DigitString,
+        sep: char,
+    ) -> (String, f64) {
         let sint = int.to_string();
         let sdec = dec.to_string();
         let val = format!("{sint}.{sdec}").parse().unwrap();
-        (format!("{sint},{sdec}"), val)
+        (format!("{sint}{sep}{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
@@ -242,7 +251,6 @@ mod tests {
         assert_text2digits!("ochenta y uno", "81");
         assert_text2digits!("cien", "100");
         assert_text2digits!("ciento uno", "101");
-        assert_text2digits!("cienta una", "101");
         assert_text2digits!("ciento quince", "115");
         assert_text2digits!("doscientos", "200");
         assert_text2digits!("doscientos uno", "201");
@@ -398,6 +406,7 @@ mod tests {
         );
         assert_replace_numbers!("cero coma quince", "0,15");
         assert_replace_numbers!("uno coma uno", "1,1");
+        assert_replace_numbers!("uno punto uno", "1.1");
         assert_replace_numbers!("uno coma cuatrocientos uno", "1,401");
         assert_replace_numbers!("cero coma cuatrocientos uno", "0,401");
     }
