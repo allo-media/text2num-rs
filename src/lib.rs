@@ -100,7 +100,7 @@ In those cases, you'll probably get a stream of tokens of a certain type instead
 The `text2num` library can process those streams as long as the token type implements the [`Token trait`](word_to_digit::Token).
 
 
-# Example: substitutions in a token stream.
+# Example: substitutions in a token list.
 
 We can show a simple example with `String` streams:
 
@@ -128,9 +128,9 @@ impl Replace for BareToken {
 }
 
 // Poor man's tokenizer
-let stream = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| BareToken(s.to_string())).collect();
+let token_list = "I have two hundreds and twenty dollars in my pocket".split_whitespace().map(|s| BareToken(s.to_string())).collect();
 
-let processed_stream = replace_numbers_in_stream(stream, &en, 10.0);
+let processed_stream = replace_numbers_in_stream(token_list, &en, 10.0);
 
 assert_eq!(
     processed_stream.into_iter().map(|t| t.0).collect::<Vec<_>>(),
@@ -172,7 +172,7 @@ impl Token for DecodedWord<'_> {
 }
 
 
-// Simulate ASR output
+// Simulate real time (online) ASR output
 
 let stream = [
     DecodedWord{ text: "i", start: 0, end: 100},
@@ -228,6 +228,7 @@ pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
         "fr" => Some(Language::french()),
         "it" => Some(Language::italian()),
         "nl" => Some(Language::dutch()),
+        "pt" => Some(Language::portuguese()),
         _ => None,
     }
 }
