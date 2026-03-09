@@ -121,11 +121,7 @@ impl LangInterpreter for English {
     }
 
     fn check_decimal_separator(&self, word: &str) -> Option<char> {
-        if word == "point" {
-            Some('.')
-        } else {
-            None
-        }
+        if word == "point" { Some('.') } else { None }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {

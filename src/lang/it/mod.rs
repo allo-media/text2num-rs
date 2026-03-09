@@ -267,11 +267,7 @@ impl LangInterpreter for Italian {
         }
     }
     fn check_decimal_separator(&self, word: &str) -> Option<char> {
-        if word == "virgola" {
-            Some(',')
-        } else {
-            None
-        }
+        if word == "virgola" { Some(',') } else { None }
     }
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
         let repr = b.to_string();

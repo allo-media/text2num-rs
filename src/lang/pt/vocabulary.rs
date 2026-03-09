@@ -1,4 +1,4 @@
-use phf::{phf_set, Set};
+use phf::{Set, phf_set};
 
 pub static INSIGNIFICANT: Set<&'static str> = phf_set! {
     "eh", "então", "bem", "isso", "outra vez", "e", "uh", "ha", "ah", "hu", "um", "menos", "ok", "sim", "mais", "aí está",

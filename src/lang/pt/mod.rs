@@ -171,11 +171,7 @@ impl LangInterpreter for Portuguese {
         }
     }
     fn check_decimal_separator(&self, word: &str) -> Option<char> {
-        if word == "vírgula" {
-            Some(',')
-        } else {
-            None
-        }
+        if word == "vírgula" { Some(',') } else { None }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -265,7 +261,10 @@ mod tests {
             "novecentos e noventa e nove mil novecentos e noventa e nove",
             "999999"
         );
-        assert_text2digits!("cinquenta e três mil e vinte milhões duzentos e quarenta e três mil setecentos e vinte e quatro", "53020243724");
+        assert_text2digits!(
+            "cinquenta e três mil e vinte milhões duzentos e quarenta e três mil setecentos e vinte e quatro",
+            "53020243724"
+        );
         assert_text2digits!(
             "cinquenta e um milhões quinhentos e setenta e oito mil trezentos e dois",
             "51578302"
@@ -437,6 +436,9 @@ mod tests {
             "dois milhões oitocentos e quarenta e quatro mil trezentos e trinta e três",
             "2844333"
         );
-        assert_text2digits!("cinquenta e três bilhões e vinte milhões duzentos e quarenta e três mil setecentos e vinte e quatro", "53020243724");
+        assert_text2digits!(
+            "cinquenta e três bilhões e vinte milhões duzentos e quarenta e três mil setecentos e vinte e quatro",
+            "53020243724"
+        );
     }
 }

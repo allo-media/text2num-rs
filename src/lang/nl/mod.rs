@@ -179,7 +179,6 @@ impl LangInterpreter for Dutch {
             }
             "honderd" | "honderdste" => {
                 let peek = b.peek(2);
-                dbg!(&peek);
                 if peek.len() == 1 && peek == b"1" {
                     Err(Error::Overlap)
                 } else {
@@ -234,11 +233,7 @@ impl LangInterpreter for Dutch {
     }
 
     fn check_decimal_separator(&self, word: &str) -> Option<char> {
-        if word == "komma" {
-            Some(',')
-        } else {
-            None
-        }
+        if word == "komma" { Some(',') } else { None }
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
@@ -335,7 +330,10 @@ mod tests {
             "Tweehonderdeenenzeventigduizend achthonderdvijftig",
             "271850"
         );
-        assert_text2digits!("Driehonderdzevenenveertig miljard zeshonderdvijfentwintig miljoen zevenhonderdachtentwintigduizend tweehonderdeenentwintig", "347625728221");
+        assert_text2digits!(
+            "Driehonderdzevenenveertig miljard zeshonderdvijfentwintig miljoen zevenhonderdachtentwintigduizend tweehonderdeenentwintig",
+            "347625728221"
+        );
     }
 
     ///
@@ -476,9 +474,9 @@ mod tests {
     #[test]
     fn test_replace_numbers_decimals() {
         assert_replace_numbers!(
-                    "Twaalf komma negenennegentig, honderdtwintig komma nul vijf, één komma tweehonderdzesendertig, één komma twee drie zes.",
-                    "12,99, 120,05, 1,236, 1,2 3 6."
-                );
+            "Twaalf komma negenennegentig, honderdtwintig komma nul vijf, één komma tweehonderdzesendertig, één komma twee drie zes.",
+            "12,99, 120,05, 1,236, 1,2 3 6."
+        );
         // assert_replace_numbers!(
         //     "Twaalf komma negen negen, honderdtwintig komma nul vijf, één komma twee drie zes, één komma tweehonderdzesendertig.",
         //     "12,99, 120,05, 1,236, 1 komma 236."

@@ -10,7 +10,7 @@ use std::iter::Enumerate;
 use crate::digit_string::DigitString;
 use crate::error::Error;
 use crate::lang::{BasicAnnotate, LangInterpreter};
-use crate::tokenizer::{tokenize, BasicToken};
+use crate::tokenizer::{BasicToken, tokenize};
 
 struct WordToDigitParser<'a, T: LangInterpreter> {
     int_part: DigitString,
@@ -619,7 +619,10 @@ mod tests {
                 &fr,
                 10.0,
             );
-            assert_eq!(wyget, "25 vaches, 12 poulets et 125 kg de pommes de terre.\n            1266 clous. 09 60 06 12 21.\n            les uns et les autres ; une suite de chiffres : 1, 2, 3 !\n            53000243724.\n            ");
+            assert_eq!(
+                wyget,
+                "25 vaches, 12 poulets et 125 kg de pommes de terre.\n            1266 clous. 09 60 06 12 21.\n            les uns et les autres ; une suite de chiffres : 1, 2, 3 !\n            53000243724.\n            "
+            );
         }
     }
 }

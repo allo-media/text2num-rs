@@ -215,8 +215,8 @@ pub mod word_to_digit;
 
 pub use lang::{BasicAnnotate, LangInterpreter, Language};
 pub use word_to_digit::{
-    find_numbers, find_numbers_iter, replace_numbers_in_stream, replace_numbers_in_text,
-    text2digits, Occurence, Replace, Token,
+    Occurence, Replace, Token, find_numbers, find_numbers_iter, replace_numbers_in_stream,
+    replace_numbers_in_text, text2digits,
 };
 
 /// Get an interpreter for the language represented by the `language_code` ISO code.
@@ -235,7 +235,7 @@ pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
 
 #[cfg(test)]
 mod tests {
-    use super::{replace_numbers_in_text, Language};
+    use super::{Language, replace_numbers_in_text};
 
     #[test]
     fn test_access_fr() {

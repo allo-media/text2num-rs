@@ -1,7 +1,7 @@
 //! Some tokenizers
 use daachorse::{
-    charwise::iter::LestmostFindIterator, errors::Result, CharwiseDoubleArrayAhoCorasick,
-    CharwiseDoubleArrayAhoCorasickBuilder, MatchKind,
+    CharwiseDoubleArrayAhoCorasick, CharwiseDoubleArrayAhoCorasickBuilder, MatchKind,
+    charwise::iter::LestmostFindIterator, errors::Result,
 };
 
 #[derive(Debug)]

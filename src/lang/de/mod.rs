@@ -213,10 +213,10 @@ impl LangInterpreter for German {
     }
 
     fn check_decimal_separator(&self, word: &str) -> Option<char> {
-        if word == "komma" {
-            Some(',')
-        } else {
-            None
+        match word {
+            "komma" => Some(','),
+            "punkt" => Some('.'),
+            _ => None,
         }
     }
 
@@ -370,8 +370,10 @@ mod tests {
         assert_replace_numbers!("eins zwei drei vier fünf und zwanzig.", "1 2 3 4 25.");
         assert_replace_numbers!("eins zwei drei vier fünfundzwanzig.", "1 2 3 4 25.");
         assert_replace_numbers!("eins zwei drei vier fünf zwanzig.", "1 2 3 4 5 20.");
-        assert_replace_numbers!("achtundachtzig sieben hundert, acht und achtzig siebenhundert, achtundachtzig sieben hundert, acht und achtzig sieben hundert",
-            "88 700, 88 700, 88 700, 88 700");
+        assert_replace_numbers!(
+            "achtundachtzig sieben hundert, acht und achtzig siebenhundert, achtundachtzig sieben hundert, acht und achtzig sieben hundert",
+            "88 700, 88 700, 88 700, 88 700"
+        );
         assert_replace_numbers!(
             "Zahlen wie vierzig fünfhundert Tausend zweiundzwanzig hundert sind gut.",
             "Zahlen wie 40 500022 100 sind gut."
@@ -469,6 +471,7 @@ mod tests {
             "Pi ist drei Komma eins vier und so weiter",
             "Pi ist 3,14 und so weiter"
         );
+        assert_replace_numbers!("drei Punkt eins vier", "3.14");
         assert_replace_numbers!("komma eins vier", "komma 1 4");
         assert_replace_all_numbers!("drei komma", "3 komma");
         assert_replace_numbers!("drei komma", "drei komma");
