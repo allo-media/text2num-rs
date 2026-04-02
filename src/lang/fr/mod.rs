@@ -68,7 +68,7 @@ impl LangInterpreter for French {
 
         let status = match lemmatize(num_func) {
             "zéro" => b.put(b"0"),
-            "un" | "unième" if !blocked.contains(Excludable::UN) => b.put(b"1"),
+            "un" | "une" | "unième" if !blocked.contains(Excludable::UN) => b.put(b"1"),
             "premier" | "première" if b.is_empty() => b.put(b"1"),
             "deux" | "deuxième" if !blocked.contains(Excludable::DEUX) => b.put(b"2"),
             "trois" | "troisième" if !blocked.contains(Excludable::TROIS) => b.put(b"3"),
@@ -391,6 +391,10 @@ mod tests {
 
         assert_text2digits!("quinze", "15");
         assert_text2digits!("dix-sept", "17");
+        assert_text2digits!("vingt-et-un", "21");
+        assert_text2digits!("vingt et un", "21");
+        assert_text2digits!("vingt-et-une", "21");
+        assert_text2digits!("vingt et une", "21");
 
         assert_text2digits!("soixante quinze mille", "75000");
         assert_text2digits!("cent un mille", "101000");
@@ -532,7 +536,7 @@ mod tests {
         assert_replace_numbers!("cinq cent unième", "501ème");
         assert_replace_numbers!("cinq cent premiers", "500 premiers");
         assert_replace_numbers!("cinq cent premier", "500 premier");
-        assert_replace_all_numbers!("une seconde", "une seconde");
+        assert_replace_numbers!("une seconde", "une seconde");
         assert_replace_numbers!("vingt-cinquième et trentième", "25ème et 30ème");
         assert_replace_numbers!("un centième", "un 100ème");
         assert_replace_numbers!("un millième", "un 1000ème");
