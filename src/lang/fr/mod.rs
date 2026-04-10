@@ -311,6 +311,7 @@ impl LangInterpreter for French {
                 {
                     tokens[true_words[i]].set_nan(true);
                 }
+                b.reset();
             }
         }
     }
@@ -490,6 +491,7 @@ mod tests {
         assert_replace_numbers!("vingt-un", "vingt-un");
         assert_replace_numbers!("vingt et un", "21");
         assert_replace_numbers!("vingt-et-un", "21");
+        assert_replace_numbers!("un sept neuf neuf", "1 7 9 9");
     }
 
     #[test]
