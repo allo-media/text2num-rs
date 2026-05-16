@@ -4,8 +4,11 @@ Top level API.
 For an overview with examples and use cases, see the [crate level documentation](super).
 
 */
-use std::collections::VecDeque;
-use std::iter::Enumerate;
+
+use alloc::{string::String, vec::Vec};
+
+use alloc::collections::VecDeque;
+use core::iter::Enumerate;
 
 use crate::digit_string::DigitString;
 use crate::error::Error;
@@ -538,7 +541,7 @@ mod tests {
         }
 
         fn text_lowercase(&self) -> &str {
-            &self.lowercase.as_str()
+            self.lowercase.as_str()
         }
 
         fn nt_separated(&self, _previous: &Self) -> bool {
@@ -572,7 +575,7 @@ mod tests {
     fn test_find_isolated_single() {
         let fr = Language::french();
         let ocs = find_numbers(tokenize("c'est un logement neuf"), &fr, 10.0);
-        dbg!(&ocs);
+        crate::tests::dbg!(&ocs);
         assert!(ocs.is_empty());
     }
 
@@ -580,7 +583,7 @@ mod tests {
     fn test_find_all_isolated_single() {
         let fr = Language::french();
         let ocs = find_numbers(tokenize("c'est zéro"), &fr, 0.0);
-        dbg!(&ocs);
+        crate::tests::dbg!(&ocs);
         assert_eq!(ocs.len(), 1);
         assert_eq!(ocs[0].text, "0");
         assert_eq!(ocs[0].value, 0.0);
@@ -590,7 +593,7 @@ mod tests {
     fn test_find_isolated_long() {
         let fr = Language::french();
         let ocs = find_numbers(tokenize("trente-sept rue du docteur leroy"), &fr, 10.0);
-        dbg!(&ocs);
+        crate::tests::dbg!(&ocs);
         assert_eq!(ocs.len(), 1);
         assert_eq!(ocs[0].text, "37");
         assert_eq!(ocs[0].value, 37.0);
@@ -600,7 +603,7 @@ mod tests {
     fn test_find_isolated_with_leading_zero() {
         let fr = Language::french();
         let ocs = find_numbers(tokenize("quatre-vingt-douze slash zéro deux"), &fr, 10.0);
-        dbg!(&ocs);
+        crate::tests::dbg!(&ocs);
         assert_eq!(ocs.len(), 2);
         assert_eq!(ocs[1].text, "02");
     }

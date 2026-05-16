@@ -1,4 +1,7 @@
 //! Some tokenizers
+
+use alloc::{borrow::ToOwned, string::String};
+
 use daachorse::{
     CharwiseDoubleArrayAhoCorasick, CharwiseDoubleArrayAhoCorasickBuilder, MatchKind,
     charwise::iter::LestmostFindIterator, errors::Result,
@@ -27,7 +30,7 @@ impl PartialEq for BasicToken {
     }
 }
 
-impl std::borrow::Borrow<str> for BasicToken {
+impl core::borrow::Borrow<str> for BasicToken {
     fn borrow(&self) -> &str {
         self.text.as_str()
     }
@@ -37,7 +40,7 @@ impl std::borrow::Borrow<str> for BasicToken {
 #[derive(Debug)]
 pub struct Tokenize<'a> {
     source: &'a str,
-    chars: std::iter::Peekable<std::str::CharIndices<'a>>,
+    chars: core::iter::Peekable<core::str::CharIndices<'a>>,
 }
 
 pub fn tokenize(source: &str) -> Tokenize<'_> {
@@ -178,13 +181,15 @@ impl WordSplitter {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec::Vec;
+
     use super::*;
 
     #[test]
     fn test_tokenizer() {
         let src = "Here, some phrase: hello!";
         let tokens: Vec<BasicToken> = Tokenize::new(src).collect();
-        dbg!(&tokens);
+        crate::tests::dbg!(&tokens);
         assert_eq!(tokens.len(), 8);
         assert_eq!(tokens[0].text, "Here");
         assert_eq!(tokens[1].text, ", ");
@@ -198,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_word_splitter() {
-        let german_splitter = WordSplitter::new(&[
+        let german_splitter = WordSplitter::new([
             "billion",
             "milliarde",
             "millionen",
@@ -212,7 +217,7 @@ mod tests {
         let tokens: Vec<&str> = german_splitter
             .split("tausendfünfhundertzweiunddreißig")
             .collect();
-        dbg!(&tokens);
+        crate::tests::dbg!(&tokens);
         assert_eq!(
             tokens,
             ["tausend", "fünf", "hundert", "zwei", "und", "dreißig"]

@@ -5,7 +5,9 @@
 //!
 //! Everywhere, the term `position` refers to decimal positions: 0 is units, 1 is tens, etc…
 
-use std::ops::Deref;
+use alloc::vec::Vec;
+
+use core::fmt::Write as _;
 
 use super::error::Error;
 use super::lang::MorphologicalMarker;
@@ -223,20 +225,29 @@ impl DigitString {
         }
     }
 
-    /// Formal base 10 string representation with leading zeroes
-    pub fn to_string(&self) -> String {
-        // we know that the string is valid.
-        let mut res = "0".repeat(self.leading_zeroes);
-        res.push_str(std::str::from_utf8(self.buffer.as_slice()).unwrap());
-        res
-    }
-
     pub fn is_ordinal(&self) -> bool {
         self.marker.is_ordinal()
     }
+
+    /// Parse digits as an integer.
+    pub fn parse(&self) -> u64 {
+        let mut result = 0;
+        for d in self.buffer.iter() {
+            let d = d - b'0';
+            result = result * 10 + d as u64;
+        }
+        result
+    }
+
+    /// Parse digits as a fractional part of a float.
+    pub fn parse_decimal(&self) -> f64 {
+        let digits = self.leading_zeroes + self.buffer.len();
+        let value = self.parse();
+        value as f64 / 10f64.powi(digits as i32)
+    }
 }
 
-impl Deref for DigitString {
+impl core::ops::Deref for DigitString {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -250,9 +261,22 @@ impl Default for DigitString {
     }
 }
 
+/// Formal base 10 string representation with leading zeroes
+impl core::fmt::Display for DigitString {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        for _ in 0..self.leading_zeroes {
+            f.write_char('0')?;
+        }
+        f.write_str(core::str::from_utf8(self.buffer.as_slice()).unwrap())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString as _;
+
     use super::*;
+
     #[test]
     fn test_put_single() -> Result<(), Error> {
         let mut builder = DigitString::new();
@@ -456,5 +480,21 @@ mod tests {
         assert!(!dstring.is_position_free(1));
         assert!(!dstring.is_position_free(3));
         assert!(!dstring.is_position_free(5));
+    }
+
+    #[test]
+    fn test_int_parse() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"12345000");
+        dstring.leading_zeroes = 1000;
+        assert_eq!(dstring.parse(), 12345000)
+    }
+
+    #[test]
+    fn test_decimal_parse() {
+        let mut dstring = DigitString::new();
+        dstring.buffer = Vec::from(b"123");
+        dstring.leading_zeroes = 3;
+        assert_eq!(dstring.parse_decimal(), 0.000123)
     }
 }

@@ -1,4 +1,7 @@
 //! Spanish number interpreter
+
+use alloc::{format, string::String};
+
 use crate::digit_string::DigitString;
 use crate::error::Error;
 
@@ -135,25 +138,12 @@ impl LangInterpreter for Spanish {
     }
 
     fn format_and_value(&self, b: &DigitString) -> (String, f64) {
-        let repr = b.to_string();
-        let val: f64 = repr.parse().unwrap();
+        let val: f64 = b.parse() as f64;
         match b.marker {
-            MorphologicalMarker::Fraction(_) => (format!("1/{repr}"), val.recip()),
-            MorphologicalMarker::Ordinal(marker) => (format!("{repr}{marker}"), val),
-            MorphologicalMarker::None => (repr, val),
+            MorphologicalMarker::Fraction(_) => (format!("1/{b}"), val.recip()),
+            MorphologicalMarker::Ordinal(marker) => (format!("{b}{marker}"), val),
+            MorphologicalMarker::None => (alloc::string::ToString::to_string(&b), val),
         }
-    }
-
-    fn format_decimal_and_value(
-        &self,
-        int: &DigitString,
-        dec: &DigitString,
-        sep: char,
-    ) -> (String, f64) {
-        let sint = int.to_string();
-        let sdec = dec.to_string();
-        let val = format!("{sint}.{sdec}").parse().unwrap();
-        (format!("{sint}{sep}{sdec}"), val)
     }
 
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
@@ -194,7 +184,7 @@ mod tests {
         ($text:expr, $res:expr) => {
             let f = Spanish {};
             let res = text2digits($text, &f);
-            dbg!(&res);
+            crate::tests::dbg!(&res);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $res)
         };

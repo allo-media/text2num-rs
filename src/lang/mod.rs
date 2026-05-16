@@ -22,25 +22,12 @@ A language is just an empty (stateless) type. Everything is provided by implemen
 
 Look at the source of the builtin languages as examples.
 */
-mod de;
-mod en;
-mod es;
-mod fr;
-mod it;
-mod nl;
-mod pt;
+
+use alloc::{string::String, vec::Vec};
 
 use crate::digit_string::DigitString;
 
 use crate::error::Error;
-
-pub use de::German;
-pub use en::English;
-pub use es::Spanish;
-pub use fr::French;
-pub use it::Italian;
-pub use nl::Dutch;
-pub use pt::Portuguese;
 
 pub trait BasicAnnotate {
     fn text_lowercase(&self) -> &str;
@@ -96,7 +83,14 @@ pub trait LangInterpreter {
     /// For example "*point*" is a decimal separator in English, figured as `'.'`
     fn check_decimal_separator(&self, word: &str) -> Option<char>;
     /// Format `b` as digit string and evaluate it, according to the language's rules.
-    fn format_and_value(&self, b: &DigitString) -> (String, f64);
+    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
+        let val: f64 = b.parse() as f64;
+        if let MorphologicalMarker::Ordinal(marker) = b.marker {
+            (alloc::format!("{b}{marker}"), val)
+        } else {
+            (alloc::string::ToString::to_string(&b), val)
+        }
+    }
     /// Format the decimal number given as integral part `int` and decimals `dec` according the the language's rules
     /// and using the decimal separator `sep` (previously returned by [`Self::check_decimal_separator()`])
     fn format_decimal_and_value(
@@ -104,7 +98,10 @@ pub trait LangInterpreter {
         int: &DigitString,
         dec: &DigitString,
         sep: char,
-    ) -> (String, f64);
+    ) -> (String, f64) {
+        let value = int.parse() as f64 + dec.parse_decimal();
+        (alloc::format!("{int}{sep}{dec}"), value)
+    }
     /// Return true if `word` does not isolate numbers in a sequence, but links them, or is truely insignificant noise.
     ///
     /// For example, in English in the phrase "*two plus three is uh five*", the words "*plus*" and "*is*" are linking words,
@@ -134,112 +131,131 @@ pub trait LangInterpreter {
     fn basic_annotate<T: BasicAnnotate>(&self, _tokens: &mut Vec<T>) {}
 }
 
-/// A convenience enum that encapsulates the builtin languages in a single type.
-pub enum Language {
-    English(English),
-    French(French),
-    German(German),
-    Italian(Italian),
-    Spanish(Spanish),
-    Dutch(Dutch),
-    Portuguese(Portuguese),
-}
+macro_rules! declare_languages {
+    ($(($feature: literal, $module: ident::$name: ident, $function: ident)),* $(,)?) => {
+        $(
+            #[cfg(feature = $feature)]
+            mod $module;
+            #[cfg(feature = $feature)]
+            pub use $module::$name;
+        )*
 
-impl Language {
-    pub fn french() -> Self {
-        Language::French(French::default())
-    }
+        /// A convenience enum that encapsulates the builtin languages in a single type.
+        pub enum Language {
+            $(
+                #[cfg(feature = $feature)]
+                $name($module::$name),
+            )*
+        }
 
-    pub fn english() -> Self {
-        Language::English(English::default())
-    }
+        impl Language {
+            $(
+                #[cfg(feature = $feature)]
+                pub fn $function() -> Self {
+                    Language::$name($module::$name::default())
+                }
+            )*
+        }
 
-    pub fn german() -> Self {
-        Language::German(German::default())
-    }
+        #[allow(unused)]
+        impl LangInterpreter for Language {
+            fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.apply(num_func, b),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
 
-    pub fn italian() -> Self {
-        Language::Italian(Italian::default())
-    }
+            fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.apply_decimal(decimal_func, b),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
 
-    pub fn spanish() -> Self {
-        Language::Spanish(Spanish::default())
-    }
+            fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.get_morph_marker(word),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
+            fn check_decimal_separator(&self, word: &str) -> Option<char>{
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.check_decimal_separator(word),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
+            fn format_and_value(&self, b: &DigitString) -> (String, f64){
+                match self{
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.format_and_value(b),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
 
-    pub fn dutch() -> Self {
-        Language::Dutch(Dutch::default())
-    }
+            fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString, sep: char) -> (String, f64) {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.format_decimal_and_value(int, dec, sep),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
+            fn is_linking(&self, word: &str) -> bool {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.is_linking(word),
+                    )*
+                    _ => unimplemented!()
+                }
+            }
 
-    pub fn portuguese() -> Self {
-        Language::Portuguese(Portuguese::default())
-    }
-}
-
-macro_rules! delegate {
-    ($($variant:ident), +) => {
-        fn apply(&self, num_func: &str, b: &mut DigitString) -> Result<(), Error> {
-            match self {
-                $(
-                    Language::$variant(l) => l.apply(num_func, b),
-                )*
+            fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
+                match self {
+                    $(
+                        #[cfg(feature = $feature)]
+                        Language::$name(l) => l.basic_annotate(tokens),
+                    )*
+                    _ => unimplemented!()
+                }
             }
         }
 
-        fn apply_decimal(&self, decimal_func: &str, b: &mut DigitString) -> Result<(), Error> {
-            match self {
+        /// Get an interpreter for the language represented by the `language_code` ISO code.
+        pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
+            match language_code {
                 $(
-                    Language::$variant(l) => l.apply_decimal(decimal_func, b),
+                #[cfg(feature = $feature)]
+                    stringify!($module) => Some(Language::$name($module::$name::default())),
                 )*
-            }
-        }
-
-        fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
-            match self {
-                $(
-                    Language::$variant(l) => l.get_morph_marker(word),
-                )*
-            }
-        }
-        fn check_decimal_separator(&self, word: &str) -> Option<char>{
-            match self {
-                $(
-                    Language::$variant(l) => l.check_decimal_separator(word),
-                )*
-            }
-        }
-        fn format_and_value(&self, b: &DigitString) -> (String, f64){
-            match self{
-                $(
-                    Language::$variant(l) => l.format_and_value(b),
-                )*
-            }
-        }
-
-        fn format_decimal_and_value(&self, int: &DigitString, dec: &DigitString, sep: char) -> (String, f64) {
-            match self {
-                $(
-                    Language::$variant(l) => l.format_decimal_and_value(int, dec, sep),
-                )*
-            }
-        }
-        fn is_linking(&self, word: &str) -> bool {
-            match self {
-                $(
-                    Language::$variant(l) => l.is_linking(word),
-                )*
-            }
-        }
-
-        fn basic_annotate<T: BasicAnnotate>(&self, tokens: &mut Vec<T>) {
-            match self {
-                $(
-                    Language::$variant(l) => l.basic_annotate(tokens),
-                )*
+                _ => None,
             }
         }
     };
 }
 
-impl LangInterpreter for Language {
-    delegate!(Dutch, French, English, German, Italian, Spanish, Portuguese);
-}
+declare_languages![
+    ("de", de::German, german),
+    ("es", es::Spanish, spanish),
+    ("en", en::English, english),
+    ("fr", fr::French, french),
+    ("it", it::Italian, italian),
+    ("nl", nl::Dutch, dutch),
+    ("pt", pt::Portuguese, portugese),
+];

@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 /*!
 This crate provides a library for recognizing, parsing and transcribing into digits (base 10) numbers expressed in natural language.
 
@@ -203,9 +205,9 @@ assert_eq!(found.text, "24");
 assert_eq!(found.value, 24.0);
 assert!(!found.is_ordinal);
 ```
-
-
 */
+
+extern crate alloc;
 
 pub mod digit_string;
 pub mod error;
@@ -219,25 +221,23 @@ pub use word_to_digit::{
     replace_numbers_in_text, text2digits,
 };
 
-/// Get an interpreter for the language represented by the `language_code` ISO code.
-pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
-    match language_code {
-        "de" => Some(Language::german()),
-        "en" => Some(Language::english()),
-        "es" => Some(Language::spanish()),
-        "fr" => Some(Language::french()),
-        "it" => Some(Language::italian()),
-        "nl" => Some(Language::dutch()),
-        "pt" => Some(Language::portuguese()),
-        _ => None,
-    }
-}
+pub use lang::get_interpreter_for;
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::{Language, replace_numbers_in_text};
 
+    #[cfg(not(feature = "std"))]
+    macro_rules! dbg {
+        ($($t: tt)*) => {
+            // noop - no stderr in no_std environment; don't run tests with no_std
+        };
+    }
+    #[allow(clippy::single_component_path_imports)]
+    pub(crate) use dbg;
+
     #[test]
+    #[cfg(feature = "fr")]
     fn test_access_fr() {
         let french = Language::french();
         assert_eq!(
@@ -251,6 +251,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "fr")]
     fn test_zeros_fr() {
         let french = Language::french();
         assert_eq!(
@@ -260,6 +261,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "en")]
     fn test_access_en() {
         let english = Language::english();
         assert_eq!(
