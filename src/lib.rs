@@ -222,6 +222,7 @@ pub use word_to_digit::{
 /// Get an interpreter for the language represented by the `language_code` ISO code.
 pub fn get_interpreter_for(language_code: &str) -> Option<Language> {
     match language_code {
+        "da" => Some(Language::danish()),
         "de" => Some(Language::german()),
         "en" => Some(Language::english()),
         "es" => Some(Language::spanish()),
