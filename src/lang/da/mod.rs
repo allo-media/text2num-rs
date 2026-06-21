@@ -189,9 +189,7 @@ impl LangInterpreter for Danish {
             // Tens. The cardinal short form, the (archaic) long cardinal form,
             // and the ordinal long form all resolve to the same tens digit;
             // ordinal-ness is detected afterwards by `is_ordinal`.
-            "tyve" | "tyvende" if !blocked.contains(Excludable::TENS) => {
-                b.put_digit_at(b'2', 1)
-            }
+            "tyve" | "tyvende" if !blocked.contains(Excludable::TENS) => b.put_digit_at(b'2', 1),
             "tredive" | "tredivte" if !blocked.contains(Excludable::TENS) => {
                 b.put_digit_at(b'3', 1)
             }
@@ -460,22 +458,13 @@ mod tests {
 
     #[test]
     fn test_replace_decimals() {
-        assert_replace_numbers!(
-            "tolv komma nioghalvfems",
-            "12,99"
-        );
-        assert_replace_numbers!(
-            "nul komma fem",
-            "0,5"
-        );
+        assert_replace_numbers!("tolv komma nioghalvfems", "12,99");
+        assert_replace_numbers!("nul komma fem", "0,5");
     }
 
     #[test]
     fn test_isolates_with_noise() {
-        assert_replace_numbers!(
-            "så to plus tre er fem",
-            "så 2 plus 3 er 5"
-        );
+        assert_replace_numbers!("så to plus tre er fem", "så 2 plus 3 er 5");
     }
 
     #[test]

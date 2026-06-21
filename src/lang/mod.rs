@@ -248,5 +248,7 @@ macro_rules! delegate {
 }
 
 impl LangInterpreter for Language {
-    delegate!(Danish, Dutch, French, English, German, Italian, Spanish, Portuguese);
+    delegate!(
+        Danish, Dutch, French, English, German, Italian, Spanish, Portuguese
+    );
 }
