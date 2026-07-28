@@ -4,6 +4,7 @@ Top level API.
 For an overview with examples and use cases, see the [crate level documentation](super).
 
 */
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::iter::Enumerate;
 
@@ -88,9 +89,9 @@ pub fn text2digits<T: LangInterpreter>(text: &str, lang: &T) -> Result<String, E
 /// An iterface for dealing with natural language tokens.
 pub trait Token {
     /// The text of the word or symbol (e.g. punctuation) represented by this token
-    fn text(&self) -> &str;
+    fn text(&self) -> Cow<'_, str>;
     /// The lowercase representation of the word represented by this token
-    fn text_lowercase(&self) -> &str;
+    fn text_lowercase(&self) -> Cow<'_, str>;
     /**
     In some token streams (e.g. ASR output), there is no punctuation
     tokens to separate words that must be undestood separately, but
@@ -101,6 +102,7 @@ pub trait Token {
     # Example
 
     ```rust
+    use std::borrow::Cow;
     use text2num::{find_numbers, Language, Token};
 
     struct DecodedWord<'a> {
@@ -110,12 +112,12 @@ pub trait Token {
     }
 
     impl Token for DecodedWord<'_> {
-        fn text(&self) -> &str {
-            self.text
+        fn text(&self) -> Cow<'_, str> {
+            self.text.into()
         }
 
-        fn text_lowercase(&self) -> &str {
-            self.text
+        fn text_lowercase(&self) -> Cow<'_, str> {
+            self.text.into()
         }
 
         fn nt_separated(&self, previous: &Self) -> bool {
@@ -163,12 +165,12 @@ pub trait Replace {
 }
 
 impl Token for &BasicToken {
-    fn text(&self) -> &str {
-        self.text.as_str()
+    fn text(&self) -> Cow<'_, str> {
+        self.text.as_str().into()
     }
 
-    fn text_lowercase(&self) -> &str {
-        self.lowercase.as_str()
+    fn text_lowercase(&self) -> Cow<'_, str> {
+        self.lowercase.as_str().into()
     }
 
     fn nt_separated(&self, _previous: &Self) -> bool {
@@ -355,7 +357,7 @@ where
     }
 
     fn push(&mut self, pos: usize, token: T) {
-        if token.text() == "-" || is_whitespace(token.text()) {
+        if token.text() == "-" || is_whitespace(&token.text()) {
             return;
         }
         if token.not_a_number_part() {
@@ -371,10 +373,10 @@ where
             if self.parser.has_number() && token.nt_separated(prev) {
                 "," // force stop without loosing token (see below)
             } else {
-                lo_token
+                &lo_token
             }
         } else {
-            lo_token
+            &lo_token
         };
         match self.parser.push(test) {
             // Set match_start on first successful parse
@@ -386,7 +388,7 @@ where
             Err(_) if self.parser.has_number() => {
                 self.number_end();
                 // The end of that match may be the start of another
-                if self.parser.push(lo_token).is_ok() {
+                if self.parser.push(&lo_token).is_ok() {
                     self.tracker.number_advanced(pos);
                 } else {
                     self.outside_number(&token)
@@ -414,7 +416,7 @@ where
     fn outside_number(&mut self, token: &T) {
         let text = token.text();
         if !(text.chars().all(|c| !c.is_alphabetic()) && text.trim() != "."
-            || self.lang.is_linking(text))
+            || self.lang.is_linking(&text))
         {
             self.tracker.sequence_breaker()
         };
@@ -533,12 +535,12 @@ mod tests {
     use crate::tokenizer::tokenize;
 
     impl Token for BasicToken {
-        fn text(&self) -> &str {
-            self.text.as_str()
+        fn text(&self) -> Cow<'_, str> {
+            self.text.as_str().into()
         }
 
-        fn text_lowercase(&self) -> &str {
-            &self.lowercase.as_str()
+        fn text_lowercase(&self) -> Cow<'_, str> {
+            self.lowercase.as_str().into()
         }
 
         fn nt_separated(&self, _previous: &Self) -> bool {
