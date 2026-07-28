@@ -492,6 +492,10 @@ mod tests {
         assert_replace_numbers!("vingt et un", "21");
         assert_replace_numbers!("vingt-et-un", "21");
         assert_replace_numbers!("un sept neuf neuf", "1 7 9 9");
+        assert_replace_numbers!(
+            "cinquante-neuf vingt et un quatre-vingt-neuf quatre-vingt-dix-huit",
+            "59 21 89 98"
+        );
     }
 
     #[test]
