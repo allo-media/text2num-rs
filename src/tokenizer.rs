@@ -1,7 +1,7 @@
 //! Some tokenizers
 use daachorse::{
     CharwiseDoubleArrayAhoCorasick, CharwiseDoubleArrayAhoCorasickBuilder, MatchKind,
-    charwise::iter::LestmostFindIterator, errors::Result,
+    charwise::iter::LeftmostFindIterator, errors::Result,
 };
 
 #[derive(Debug)]
@@ -98,13 +98,13 @@ impl Iterator for Tokenize<'_> {
 
 pub struct WordSplitIterator<'a> {
     source: &'a str,
-    matches: LestmostFindIterator<'a, &'a str, usize>,
+    matches: LeftmostFindIterator<'a, &'a str, usize>,
     end: usize,
     cursor: usize,
 }
 
 impl<'a> WordSplitIterator<'a> {
-    fn new(source: &'a str, matches: LestmostFindIterator<'a, &'a str, usize>) -> Self {
+    fn new(source: &'a str, matches: LeftmostFindIterator<'a, &'a str, usize>) -> Self {
         Self {
             source,
             matches,

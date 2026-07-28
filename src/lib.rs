@@ -105,6 +105,7 @@ The `text2num` library can process those streams as long as the token type imple
 We can show a simple example with `String` streams:
 
 ```rust
+use std::borrow::Cow;
 use text2num::{replace_numbers_in_stream, Language, Token, Replace};
 
 let en = Language::english();
@@ -112,12 +113,12 @@ let en = Language::english();
 struct BareToken(String);
 
 impl Token for &BareToken {
-    fn text(&self) -> &str {
-        self.0.as_ref()
+    fn text(&self) -> Cow<'_, str> {
+        self.0.as_str().into()
     }
 
-    fn text_lowercase(&self) -> &str {
-        self.0.as_ref()
+    fn text_lowercase(&self) -> Cow<'_, str> {
+        self.0.as_str().into()
     }
 }
 
@@ -144,6 +145,7 @@ In this more elaborate example, we show how to implement the `Token` trait on a 
 how to locate numbers (and their values) in a stream of those tokens.
 
 ```rust
+use std::borrow::Cow;
 use text2num::{find_numbers, Language, Token};
 
 struct DecodedWord<'a> {
@@ -153,12 +155,12 @@ struct DecodedWord<'a> {
 }
 
 impl Token for DecodedWord<'_> {
-    fn text(&self) -> &str {
-        self.text
+    fn text(&self) -> Cow<'_, str> {
+        self.text.into()
     }
 
-    fn text_lowercase(&self) -> &str {
-        self.text
+    fn text_lowercase(&self) -> Cow<'_, str> {
+        self.text.into()
     }
 
     fn nt_separated(&self, previous: &Self) -> bool {
