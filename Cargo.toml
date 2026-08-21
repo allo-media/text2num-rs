@@ -1,18 +1,41 @@
 [package]
 name = "text2num"
-version = "2.7.0"
+version = "2.8.0"
 authors = ["Allo-Media <contact@allo-media.fr>"]
 edition = "2024"
 license = "MIT"
-description = "Parse and convert numbers written in English, Dutch, Spanish, Portuguese, German, Italian or French into their digit representation."
+description = "Parse and convert numbers written in English, Danish, Dutch, Spanish, Portuguese, German, Italian or French into their digit representation."
 keywords = ["NLP", "words-to-numbers"]
 categories = ["text-processing"]
 repository = "https://github.com/allo-media/text2num-rs"
 readme = "README.md"
 exclude = [".circleci", ".gitignore"]
 
+[features]
+default = ["all_languages", "std"]
+std = ["phf/std"]
+
+# Languages
+da = []
+de = []
+en = []
+es = []
+fr = []
+it = []
+nl = []
+pt = []
+all_languages = [
+    "da",
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "nl",
+    "pt",
+]
 
 [dependencies]
-phf = { version = "0.13", features = ["macros"] }
+phf = { version = "0.13", default-features = false, features = ["macros"] }
 bitflags = "1.3"
 daachorse = "3"

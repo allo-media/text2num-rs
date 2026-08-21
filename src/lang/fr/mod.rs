@@ -1,6 +1,9 @@
 //! French number interpreter.
 //!
 //! It supports regional variants.
+
+use alloc::vec::Vec;
+
 use bitflags::bitflags;
 
 use crate::digit_string::DigitString;
@@ -229,28 +232,6 @@ impl LangInterpreter for French {
         if word == "virgule" { Some(',') } else { None }
     }
 
-    fn format_and_value(&self, b: &DigitString) -> (String, f64) {
-        let repr = b.to_string();
-        let val = repr.parse().unwrap();
-        if let MorphologicalMarker::Ordinal(marker) = b.marker {
-            (format!("{}{}", b.to_string(), marker), val)
-        } else {
-            (repr, val)
-        }
-    }
-
-    fn format_decimal_and_value(
-        &self,
-        int: &DigitString,
-        dec: &DigitString,
-        sep: char,
-    ) -> (String, f64) {
-        let sint = int.to_string();
-        let sdec = dec.to_string();
-        let val = format!("{sint}.{sdec}").parse().unwrap();
-        (format!("{sint}{sep}{sdec}"), val)
-    }
-
     fn get_morph_marker(&self, word: &str) -> MorphologicalMarker {
         if word.ends_with("ème") {
             MorphologicalMarker::Ordinal("ème")
@@ -326,7 +307,7 @@ mod tests {
         ($text:expr, $res:expr) => {
             let f = French {};
             let res = text2digits($text, &f);
-            dbg!(&res);
+            crate::tests::dbg!(&res);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $res)
         };
