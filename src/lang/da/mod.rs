@@ -12,6 +12,10 @@
 //!   40th = "fyrretyvende". 100th and 1000th have no distinct ordinal form
 //!   ("hundrede"/"tusinde", same as the cardinals).
 
+use alloc::{
+    format,
+    string::{String, ToString},
+};
 use bitflags::bitflags;
 
 use crate::digit_string::DigitString;
