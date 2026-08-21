@@ -11,8 +11,31 @@ repository = "https://github.com/allo-media/text2num-rs"
 readme = "README.md"
 exclude = [".circleci", ".gitignore"]
 
+[features]
+default = ["all_languages", "std"]
+std = ["phf/std"]
+
+# Languages
+da = []
+de = []
+en = []
+es = []
+fr = []
+it = []
+nl = []
+pt = []
+all_languages = [
+    "da",
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "nl",
+    "pt",
+]
 
 [dependencies]
-phf = { version = "0.13", features = ["macros"] }
+phf = { version = "0.13", default-features = false, features = ["macros"] }
 bitflags = "1.3"
 daachorse = "3"
