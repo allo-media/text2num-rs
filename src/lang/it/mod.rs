@@ -37,6 +37,22 @@ fn lemmatize(word: &str) -> &str {
     }
 }
 
+fn apply_cento(b: &mut DigitString) -> Result<(), Error> {
+    let peek = b.peek(2);
+    if (peek.len() == 1 || peek < b"10") && peek != b"1" && peek != b"01" {
+        b.shift(2)
+    } else {
+        Err(Error::Overlap)
+    }
+}
+
+/// True if `b` ends with a lone "un" that a singular scale word ("milione", "miliardo") can apply to:
+/// either `b` is just "1", or it ends with "001" after a larger group, as in "due miliardi un milione".
+fn is_single_one(b: &DigitString, up_to: usize) -> bool {
+    let peek = b.peek(3);
+    (peek == b"1" || peek == b"001") && b.is_range_free(3, up_to)
+}
+
 impl Default for Italian {
     fn default() -> Self {
         Self {
@@ -61,6 +77,9 @@ impl Default for Italian {
                 "trenta",
                 "ttanta",
                 "cento",
+                "centunesim",
+                "centuno",
+                "centun",
                 "mille",
                 "venti",
                 "mila",
@@ -122,7 +141,7 @@ impl LangInterpreter for Italian {
             "tredici" | "tredicesim" => b.put(b"13"),
             "quattordici" | "quattordicesim" => b.put(b"14"),
             "quindici" | "quindicesim" => b.put(b"15"),
-            "sedici" | "dedicesim" => b.put(b"16"),
+            "sedici" | "sedicesim" => b.put(b"16"),
             "diciassette" | "diciassettesim" => b.put(b"17"),
             "diciotto" | "diciottesim" => b.put(b"18"),
             "diciannove" | "diciannovesim" => b.put(b"19"),
@@ -142,23 +161,20 @@ impl LangInterpreter for Italian {
             "sessantuno" | "sessantun" | "sessantunesim" => b.put(b"61"),
             "sessantotto" | "sessantottesim" => b.put(b"68"),
             "settanta" | "settantesim" => b.put(b"70"),
-            "settantuno" | "settantun" | "settanunesim" => b.put(b"71"),
+            "settantuno" | "settantun" | "settantunesim" => b.put(b"71"),
             "settantotto" | "settantottesim" => b.put(b"78"),
             "ottanta" | "ottantesim" | "ttanta" | "ttantesim" => b.put(b"80"),
             "ottantuno" | "ottantun" | "ottantunesim" => b.put(b"81"),
             "ottantotto" | "ottantottesim" => b.put(b"88"),
+            // elided after "cento", as in "centottantuno"
+            "ttantuno" | "ttantun" | "ttantunesim" => b.put(b"81"),
+            "ttantotto" | "ttantottesim" => b.put(b"88"),
             "novanta" | "novantesim" => b.put(b"90"),
             "novantuno" | "novantun" | "novantunesim" => b.put(b"91"),
             "novantotto" | "novantottesim" => b.put(b"98"),
-            "cento" | "centesim" => {
-                let peek = b.peek(2);
-                if (peek.len() == 1 || peek < b"10") && peek != b"1" && peek != b"01" {
-                    b.shift(2)
-                } else {
-                    Err(Error::Overlap)
-                }
-            }
-            "centuno" | "centun" | "centunesimo" => b.put(b"101"),
+            "cento" | "centesim" => apply_cento(b),
+            // "cento" + "uno" with elision
+            "centuno" | "centun" | "centunesim" => apply_cento(b).and_then(|_| b.put(b"1")),
             "mille" if b.is_range_free(3, 5) => b.put(b"1000"),
             "mila" if b.is_range_free(3, 5) => {
                 let peek = b.peek(3);
@@ -177,10 +193,10 @@ impl LangInterpreter for Italian {
                 }
             }
             "milione" if b.is_range_free(6, 8) => {
-                if b.len() != 1 || b.peek(1) != b"1" {
-                    Err(Error::NaN)
-                } else {
+                if is_single_one(b, 5) {
                     b.shift(6)
+                } else {
+                    Err(Error::NaN)
                 }
             }
             "milionesim" if b.is_range_free(6, 8) => {
@@ -198,10 +214,10 @@ impl LangInterpreter for Italian {
                 }
             }
             "miliardo" => {
-                if b.len() != 1 || b.peek(1) != b"1" {
-                    Err(Error::NaN)
-                } else {
+                if is_single_one(b, 8) {
                     b.shift(9)
+                } else {
+                    Err(Error::NaN)
                 }
             }
             "miliardesim" => {
@@ -404,6 +420,45 @@ mod tests {
         assert_text2digits!("ventunesimo", "21º");
         assert_text2digits!("venticinquesimi", "25º");
         assert_text2digits!("ventunesimi", "21º");
+    }
+
+    #[test]
+    fn test_elided_hundreds() {
+        // "cento" drops its final "o" before "uno" and "ottanta"
+        assert_text2digits!("centuno", "101");
+        assert_text2digits!("duecentuno", "201");
+        assert_text2digits!("novecentun", "901");
+        assert_text2digits!("milleduecentuno", "1201");
+        assert_text2digits!("centottantuno", "181");
+        assert_text2digits!("centottantotto", "188");
+        assert_text2digits!("duecentottantuno", "281");
+        assert_text2digits!("millecentottantotto", "1188");
+        assert_text2digits!("trecentottantun", "381");
+        assert_invalid!("centuno cento");
+        assert_replace_numbers!("ho comprato centottantuno mele", "ho comprato 181 mele");
+    }
+
+    #[test]
+    fn test_singular_scale_after_larger_group() {
+        assert_text2digits!("due miliardi un milione", "2001000000");
+        assert_text2digits!(
+            "seicentottantaquattro miliardi un milione quattrocentoquattromila",
+            "684001404000"
+        );
+        assert_text2digits!("un bilione un miliardo", "1001000000000");
+        assert_invalid!("mille un milione");
+        assert_invalid!("due milioni un milione");
+        assert_invalid!("due miliardi centouno milione");
+    }
+
+    #[test]
+    fn test_more_ordinals() {
+        assert_text2digits!("sedicesimo", "16º");
+        assert_text2digits!("centosedicesimo", "116º");
+        assert_text2digits!("settantunesimo", "71º");
+        assert_text2digits!("centunesimo", "101º");
+        assert_text2digits!("duecentunesimo", "201º");
+        assert_text2digits!("centottantunesimo", "181º");
     }
 
     #[test]
